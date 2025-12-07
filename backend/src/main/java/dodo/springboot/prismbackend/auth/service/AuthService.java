@@ -39,7 +39,7 @@ public class AuthService {
                 });
 
         // 토큰 발급
-        String accessToken = jwtUtil.createAccessToken(user.getId(), user.getEmail());
+        String accessToken = jwtUtil.createAccessToken(user.getId(), user.getEmail(), user.getRole().getKey());
         String refreshToken = jwtUtil.createRefreshToken(user.getId());
 
         // refreshToken DB 저장/업데이트

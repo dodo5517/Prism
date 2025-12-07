@@ -21,10 +21,11 @@ public class JwtUtil {
     }
 
     // accessToken 생성 (userId, email 담음)
-    public String createAccessToken(Long userId, String email) {
+    public String createAccessToken(Long userId, String email, String role) {
         return Jwts.builder()
                 .setSubject(String.valueOf(userId)) // Subject에 ID 저장
                 .claim("email", email) // Claim에 이메일 저장
+                .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + accessTokenValidity))
                 .signWith(key, SignatureAlgorithm.HS256)
