@@ -34,7 +34,7 @@ public class SecurityConfig {
                 // URL 권한 설정
                 .authorizeHttpRequests(auth -> auth
                         // 아무나 접근 가능
-                        .requestMatchers("/", "/login/**", "/oauth2/**", "/error", "/favicon.ico").permitAll()
+                        .requestMatchers("/", "/login/**", "/oauth2/**", "/error", "/favicon.ico", "/api/auth/guest").permitAll()
                         // 그 외 모든 요청은 인증된 사용자만 접근 가능
                         .anyRequest().authenticated()
                 )
