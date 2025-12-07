@@ -10,6 +10,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -55,7 +56,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String accessToken = jwtUtil.createAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtUtil.createRefreshToken(user.getId());
 
-        // 3. 리프레시 토큰 DB 저장 (기존 거 있으면 업데이트, 없으면 생성)
+        // refreshToken DB에 저장 (기존 거 있으면 업데이트, 없으면 생성)
         refreshTokenRepository.findByUserId(user.getId())
                 .ifPresentOrElse(
                         token -> {
@@ -64,6 +65,18 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                         },
                         () -> refreshTokenRepository.save(new RefreshToken(user.getId(), refreshToken))
                 );
+
+        // refreshToken HTTP-only 쿠키로 생성
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)  // 자바스크립트 접근 불가 (XSS 방지)
+                .secure(true)    // HTTPS에서만 전송 (localhost에서는 허용됨)
+                .path("/")       // 모든 경로에서 쿠키 전송
+                .maxAge(60 * 60 * 24 * 7) // 7일
+                .sameSite("Lax") // CSRF 방지
+                .build();
+
+        // 응답 헤더에 쿠키 추가
+        response.addHeader("Set-Cookie", cookie.toString());
 
         // 프론트엔드에 accessToken 달아서 리다이렉트
         String targetUrl = "http://localhost:3000/auth/callback?token=" + accessToken;
