@@ -1,11 +1,8 @@
 package dodo.springboot.prismbackend.auth.controller;
 
-import dodo.springboot.prismbackend.auth.entity.RefreshToken;
-import dodo.springboot.prismbackend.auth.jwt.JwtUtil;
-import dodo.springboot.prismbackend.auth.repository.RefreshTokenRepository;
-import dodo.springboot.prismbackend.user.entity.Role;
-import dodo.springboot.prismbackend.user.entity.User;
-import dodo.springboot.prismbackend.user.repository.UserRepository;
+import dodo.springboot.prismbackend.auth.dto.TokenResponseDto;
+import dodo.springboot.prismbackend.auth.service.AuthService;
+import dodo.springboot.prismbackend.global.util.CookieUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
@@ -21,53 +18,23 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
-    private final JwtUtil jwtUtil;
+    private final AuthService authService;
+    private final CookieUtil cookieUtil;
 
     @GetMapping("/guest")
     public ResponseEntity<?> guestLogin(HttpServletResponse response) {
-        // 게스트용 이메일
-        String guestEmail = "guest@prism.com";
-        // DB에 게스트 유저가 없으면 생성, 있으면 조회
-        User guestUser = userRepository.findByEmail(guestEmail)
-                .orElseGet(() -> userRepository.save(User.builder()
-                        .email(guestEmail)
-                        .nickname("체험용 계정")
-                        .role(Role.USER)
-                        .provider("guest")
-                        .providerId("guest_1234")
-                        .build()));
+        // 토근 생성
+        TokenResponseDto tokenDto = authService.loginOrSignup(
+                "guest@prism.com", "체험용 계정", "guest", "guest_1234"
+        );
 
-        // 토큰 발급
-        String accessToken = jwtUtil.createAccessToken(guestUser.getId(), guestUser.getEmail());
-        String refreshToken = jwtUtil.createRefreshToken(guestUser.getId());
-
-        // refreshToken DB에 저장 (기존 거 있으면 업데이트, 없으면 생성)
-        refreshTokenRepository.findByUserId(guestUser.getId())
-                .ifPresentOrElse(
-                        token -> {
-                            token.updateToken(refreshToken);
-                            refreshTokenRepository.save(token);
-                        },
-                        () -> refreshTokenRepository.save(new RefreshToken(guestUser.getId(), refreshToken))
-                );
-
-        // refreshToken 쿠키 생성 및 설정
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .maxAge(60 * 60 * 24 * 7)
-                .sameSite("Lax")
-                .build();
-
+        // 쿠키 설정
+        ResponseCookie cookie = cookieUtil.createRefreshTokenCookie(tokenDto.refreshToken());
         response.addHeader("Set-Cookie", cookie.toString());
 
-        // 토큰 리턴 (JSON 형식)
         return ResponseEntity.ok(Map.of(
-                "accessToken", accessToken,
-                "nickname", guestUser.getNickname()
+                "accessToken", tokenDto.accessToken(),
+                "nickname", tokenDto.nickname()
         ));
     }
 }
