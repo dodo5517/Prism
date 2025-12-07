@@ -38,7 +38,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         response.addHeader("Set-Cookie", cookie.toString());
 
         // 프론트로 리다이렉트
-        String targetUrl = "http://localhost:3000/auth/callback?token=" + tokenDto.accessToken();
+        String targetUrl = "http://localhost:3000/auth/callback?accessToken=" + tokenDto.accessToken();
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }
