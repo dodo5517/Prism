@@ -1,5 +1,6 @@
 package dodo.springboot.prismbackend.auth.entity;
 
+import dodo.springboot.prismbackend.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -16,15 +17,16 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(nullable = false, unique = true)
     private String token;
 
     @Builder
-    public RefreshToken(Long userId, String token) {
-        this.userId = userId;
+    public RefreshToken(User user, String token) {
+        this.user = user;
         this.token = token;
     }
 

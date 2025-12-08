@@ -46,7 +46,7 @@ public class AuthService {
         refreshTokenRepository.findByUserId(user.getId())
                 .ifPresentOrElse(
                         token -> token.updateToken(refreshToken), // Dirty Checking으로 자동 저장
-                        () -> refreshTokenRepository.save(new RefreshToken(user.getId(), refreshToken))
+                        () -> refreshTokenRepository.save(new RefreshToken(user, refreshToken))
                 );
 
         // 토큰과 닉네임 응답
