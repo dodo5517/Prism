@@ -30,6 +30,9 @@ public class User {
     private String provider; // "google"
     private String providerId; // 구글 고유 ID
 
+    @Column(columnDefinition = "TEXT")
+    private String characterDescription = "Golden Hamster"; // 본인 캐릭터
+
     private LocalDateTime createdAt;
 
     @Builder
@@ -42,9 +45,14 @@ public class User {
         this.createdAt = LocalDateTime.now();
     }
 
-    // 소셜 로그인 시 닉네임 등이 바뀌었을 때 업데이트하는 메소드
+    // 로그인 시 닉네임이 바뀌었을 때 업데이트 메소드
     public User update(String nickname) {
         this.nickname = nickname;
         return this;
+    }
+
+    // 캐릭터 설정 바뀌면 업데이트 메소드
+    public void updateCharacter(String description) {
+        this.characterDescription = description;
     }
 }
