@@ -37,28 +37,32 @@ public class GeminiService {
             
             **Input:** Diary: "%s" / Character: "%s"
             
-            **CHARACTER:** Convert to "handmade clay [character]" (e.g., human→"handmade clay person", 여자→"handmade clay girl", dog→"handmade clay dog", unknown→"handmade clay [input]")
+            **CHARACTER:** Convert to "handmade clay [character]"
             
-            **STYLE:** Handmade clay figure, stop-motion animation style (like Aardman, Wallace and Gromit, Coraline), slightly imperfect and asymmetrical features, visible fingerprint textures on clay, wobbly handcrafted charm, chibi proportions (big head, small body), warm muted pastel colors, simple soft background, single centered character.
+            **STYLE:** Handmade clay figure, stop-motion animation style, slightly imperfect, visible fingerprint texture, wobbly handcrafted charm, warm muted pastel colors, simple soft background, single character only, Aardman animation style.
             
             **EMOTION:**
             - 0-39: sad droopy eyes, frown, tear drop, dark cloud above
-            - 40-69: calm dot eyes, small smile
-            - 70-100: happy curved eyes, big smile, hearts/sparkles around
+            - 40-69: calm eyes, small smile
+            - 70-100: happy curved eyes, big smile, hearts around
             
-            **PROP (MUST INCLUDE 1):** 감기→thermometer/tissue, 공부/시험→book/pencil, 야근/일→laptop/coffee, 운동→dumbbell, 음식/치킨/맛집→plate with food, 게임→controller, TV/넷플→TV/remote, 카페→coffee cup. No match→extract main noun.
+            **PROP (CRITICAL):**
+            - Extract main object/food from diary
+            - Translate Korean items to simple English visual description
+            - Describe the SHAPE and APPEARANCE, not the name
+            - Examples: 붕어빵→"fish-shaped bread pastry", 마라탕→"bowl of spicy red soup with noodles", 떡볶이→"bowl of red sauce rice cakes", 빙수→"shaved ice in bowl"
             
             **OUTPUT (JSON only):**
             {
               "representative_mood": "Korean word",
               "mood_score": 0-100,
               "keywords": ["context", "emotion", "action"],
-              "image_prompt": "handmade clay figure, stop-motion animation style, single character only, one [CHARACTER] with big head small body, slightly asymmetrical features, visible fingerprint texture, [expression], [pose], [PROP as handmade clay object], warm muted pastel colors, soft simple background, wobbly handcrafted charm, Aardman animation style. Negative prompt: realistic, photograph, anime, perfect, symmetrical, smooth, digital, polished, complex background, multiple characters, two characters, group, duo, crowd"
+              "image_prompt": "handmade clay figure, stop-motion style, single character only, one clay [CHARACTER], [expression], [pose], holding/next to [PROP - described in English], warm muted pastel colors, simple background, Aardman style. Negative prompt: realistic, photograph, anime, perfect, smooth, multiple characters, complex background"
             }
             
             **EXAMPLE:**
-            Diary: "치킨 시켜먹음 존맛" / Character: "human"
-            {"representative_mood":"행복","mood_score":88,"keywords":["치킨","맛있음","만족"],"image_prompt":"handmade clay figure, stop-motion animation style, clay person with big head small body, slightly asymmetrical face, visible fingerprint texture on surface, happy curved eyes and big wonky smile, sitting holding clay fried chicken piece, plate of clay chicken in front, small clay hearts floating, warm muted pastel colors, soft beige background, wobbly handcrafted charm, Aardman animation style. Negative prompt: realistic, photograph, anime, perfect, symmetrical, smooth, digital, polished, complex background, multiple characters"}
+            Diary: "붕어빵 먹음" / Character: "dog"
+            {"representative_mood":"만족","mood_score":75,"keywords":["붕어빵","간식","행복"],"image_prompt":"handmade clay figure, stop-motion style, single character only, one clay dog with happy curved eyes and big smile, holding small fish-shaped bread pastry, warm muted pastel colors, simple beige background, Aardman style. Negative prompt: realistic, photograph, anime, perfect, smooth, multiple characters, complex background"}
             """.formatted(diaryContent, userCharacter);
 
         try {
