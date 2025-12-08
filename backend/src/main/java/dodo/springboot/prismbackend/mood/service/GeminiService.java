@@ -46,18 +46,21 @@ public class GeminiService {
             - 40-69: calm eyes, small smile
             - 70-100: happy curved eyes, big smile, hearts around
             
-            **PROP (CRITICAL):**
+            **PROP (CRITICAL - MUST INCLUDE 1):**
             - Extract main object/food from diary
+            - ALWAYS include at least 1 prop that explains the situation
             - Translate Korean items to simple English visual description
             - Describe the SHAPE and APPEARANCE, not the name
-            - Examples: 붕어빵→"fish-shaped bread pastry", 마라탕→"bowl of spicy red soup with noodles", 떡볶이→"bowl of red sauce rice cakes", 빙수→"shaved ice in bowl"
+            - Food examples: 붕어빵→"fish-shaped bread pastry", 마라탕→"bowl of spicy red soup with noodles", 떡볶이→"bowl of red sauce rice cakes", 빙수→"shaved ice in bowl"
+            - Activity examples: 공부/시험→book/pencil, 야근/일→laptop/coffee, 운동→dumbbell, 게임→controller, TV/넷플→TV/remote, 카페→coffee cup, 감기→thermometer/tissue
+            - If no clear match→extract main noun from diary and describe it
             
             **OUTPUT (JSON only):**
             {
               "representative_mood": "Korean word",
               "mood_score": 0-100,
               "keywords": ["context", "emotion", "action"],
-              "image_prompt": "handmade clay figure, stop-motion style, single character only, one clay [CHARACTER], [expression], [pose], holding/next to [PROP - described in English], warm muted pastel colors, simple background, Aardman style. Negative prompt: realistic, photograph, anime, perfect, smooth, multiple characters, complex background"
+              "image_prompt": "handmade clay figure, stop-motion style, single character only, one clay [CHARACTER], [expression], [pose], holding/next to [PROP - MUST INCLUDE, described in English], warm muted pastel colors, simple background, Aardman style. Negative prompt: realistic, photograph, anime, perfect, smooth, multiple characters, complex background"
             }
             
             **EXAMPLE:**
