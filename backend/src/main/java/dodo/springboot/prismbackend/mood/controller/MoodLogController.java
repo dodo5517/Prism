@@ -1,11 +1,17 @@
 package dodo.springboot.prismbackend.mood.controller;
 
 import dodo.springboot.prismbackend.global.dto.ApiResponse;
+import dodo.springboot.prismbackend.mood.dto.CalendarDetailResponseDto;
+import dodo.springboot.prismbackend.mood.dto.CalendarResponseDto;
 import dodo.springboot.prismbackend.mood.dto.MoodLogRequestDto;
+import dodo.springboot.prismbackend.mood.service.CalendarService;
 import dodo.springboot.prismbackend.mood.service.MoodLogService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/logs")
@@ -13,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class MoodLogController {
 
     private final MoodLogService moodLogService;
+    private final CalendarService calendarService;
 
     @PostMapping
     public ApiResponse<Long> createLog(
@@ -21,5 +28,26 @@ public class MoodLogController {
     ) {
         Long logId = moodLogService.createMoodLog(userId, requestDto);
         return ApiResponse.success(logId);
+    }
+
+    // 달 조회
+    @GetMapping("/monthly")
+    public ResponseEntity<List<CalendarResponseDto>> getCalendarList(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        List<CalendarResponseDto> list = calendarService.getCalendarList(year, month, userId);
+        return ResponseEntity.ok(list);
+    }
+
+    // 상세 조회 (모달용, Content 포함)
+    @GetMapping("/{id}")
+    public ResponseEntity<CalendarDetailResponseDto> getCalendarDetail(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long id
+    ) {
+        CalendarDetailResponseDto detail = calendarService.getMoodLogDetail(id, userId);
+        return ResponseEntity.ok(detail);
     }
 }
