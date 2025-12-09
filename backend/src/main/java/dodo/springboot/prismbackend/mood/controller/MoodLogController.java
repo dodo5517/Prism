@@ -32,22 +32,22 @@ public class MoodLogController {
 
     // 달 조회
     @GetMapping("/monthly")
-    public ResponseEntity<List<CalendarResponseDto>> getCalendarList(
+    public ApiResponse<List<CalendarResponseDto>> getCalendarList(
             @AuthenticationPrincipal Long userId,
             @RequestParam int year,
             @RequestParam int month
     ) {
         List<CalendarResponseDto> list = calendarService.getCalendarList(year, month, userId);
-        return ResponseEntity.ok(list);
+        return ApiResponse.success(list);
     }
 
     // 상세 조회 (모달용, Content 포함)
     @GetMapping("/{id}")
-    public ResponseEntity<CalendarDetailResponseDto> getCalendarDetail(
+    public ApiResponse<CalendarDetailResponseDto> getCalendarDetail(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long id
     ) {
         CalendarDetailResponseDto detail = calendarService.getMoodLogDetail(id, userId);
-        return ResponseEntity.ok(detail);
+        return ApiResponse.success(detail);
     }
 }
