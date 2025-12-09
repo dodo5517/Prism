@@ -38,13 +38,18 @@ public class MoodLogService {
                 .content(requestDto.content())
                 .build());
 
-        // --- AI 처리 ---
+        // AI 처리 및 결과 저장
+        processAiAnalysis(user, moodLog);
+
+        return moodLog.getId();
+    }
+
+    // AI 처리 메서드
+    public void processAiAnalysis(User user, MoodLog moodLog) {
         // Gemini 분석 (그림 묘사 프롬프트 생성)
         // 유저의 캐릭터 설정 가져오기
-        String userChar = user.getCharacterDescription();
-        if (userChar == null || userChar.isEmpty()) {
-            userChar = "dog";
-        }
+        String userChar = (user.getCharacterDescription() != null && !user.getCharacterDescription().isEmpty())
+                ? user.getCharacterDescription() : "dog";
         AiAnalysisResult aiResult = geminiService.analyzeMood(moodLog.getContent(), userChar);
 
         // Cloudflare 이미지 생성 (byte[])
@@ -54,7 +59,7 @@ public class MoodLogService {
         String imageUrl = null;
         if (imageBytes != null) {
             // 일단 .png로 저장 -> StorageService가 .jpg로 바꿈
-            String filename = "user_" + userId + "_" + ".png";
+            String filename = "user_" + user.getId() + "_" + System.currentTimeMillis() + ".png";
             imageUrl = storageService.uploadImage(imageBytes, filename);
         }
 
@@ -67,7 +72,5 @@ public class MoodLogService {
                 .imagePrompt(aiResult.imagePrompt())
                 .imageUrl(imageUrl)
                 .build());
-
-        return moodLog.getId();
     }
 }
