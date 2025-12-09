@@ -35,6 +35,40 @@ export default function Home() {
         }
     }, [currentDate, isAuthenticated, isMounted]);
 
+    // 달력 부분 업데이트 함수
+    const addDiary = (newDiary: CalendarResponseDto) => {
+        setDiaries(prev => {
+            // 이미 해당 날짜 일기가 있으면 교체
+            const exists = prev.some(d => d.id === newDiary.id);
+            if (exists) {
+                return prev.map(d => (d.id === newDiary.id ? newDiary : d));
+            }
+            // 없으면 추가
+            return [...prev, newDiary];
+        });
+    };
+
+    // 달력 부분 업데이트 함수
+    const updateDiary = (updated: CalendarDetailResponseDto) => {
+        setDiaries(prev =>
+            prev.map(d =>
+                d.id === updated.id
+                    ? {
+                        id: updated.id,
+                        date: updated.date,
+                        imageUrl: updated.imageUrl ?? "",
+                        moodScore: updated.moodScore
+                    }
+                    : d
+            )
+        );
+    };
+
+    // 일기 삭제 시 목록에서도 제거
+    const removeDiary = (id: number) => {
+        setDiaries(prev => prev.filter(d => d.id !== id));
+    };
+
     const fetchDiaries = async (date: Date) => {
         setIsLoading(true);
         try {
@@ -250,15 +284,25 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* 모달 및 로딩 */}
+            {/* 모달 */}
             <WriteModal
                 isOpen={isWriteModalOpen}
                 onClose={() => setIsWriteModalOpen(false)}
                 selectedDate={selectedDate}
+                onAddDiary={addDiary}
+                onUpdateDiary={updateDiary}
+                onDeleteDiary={removeDiary}
             />
             {selectedDetail &&
-                <ResultModal data={selectedDetail} onClose={() => setSelectedDetail(null)}/>
+                <ResultModal
+                    data={selectedDetail}
+                    onClose={() => setSelectedDetail(null)}
+                    onUpdateDiary={updateDiary}
+                    onDeleteDiary={removeDiary}
+                />
             }
+
+            {/*로딩*/}
             {isLoading && <LoadingScreen />}
         </main>
     );
