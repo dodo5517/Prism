@@ -1,5 +1,6 @@
 package dodo.springboot.prismbackend.auth.entity;
 
+import dodo.springboot.prismbackend.global.entity.BaseTimeEntity;
 import dodo.springboot.prismbackend.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "refresh_tokens")
-public class RefreshToken {
+public class RefreshToken extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

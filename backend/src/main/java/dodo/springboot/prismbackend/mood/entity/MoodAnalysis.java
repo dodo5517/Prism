@@ -1,5 +1,6 @@
 package dodo.springboot.prismbackend.mood.entity;
 
+import dodo.springboot.prismbackend.global.entity.BaseTimeEntity;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import jakarta.persistence.*;
@@ -13,7 +14,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "mood_analysis")
-public class MoodAnalysis {
+public class MoodAnalysis extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

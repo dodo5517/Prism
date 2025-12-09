@@ -1,5 +1,6 @@
 package dodo.springboot.prismbackend.user.entity;
 
+import dodo.springboot.prismbackend.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users") // 테이블 이름 지정
-public class User {
+public class User extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,8 +34,6 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String characterDescription = "Golden Hamster"; // 본인 캐릭터
 
-    private LocalDateTime createdAt;
-
     @Builder
     public User(String email, String nickname, Role role, String provider, String providerId) {
         this.email = email;
@@ -42,7 +41,6 @@ public class User {
         this.role = role;
         this.provider = provider;
         this.providerId = providerId;
-        this.createdAt = LocalDateTime.now();
     }
 
     // 로그인 시 닉네임이 바뀌었을 때 업데이트 메소드
