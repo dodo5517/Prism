@@ -76,15 +76,16 @@ public class CalendarService {
         }
 
         // DB에서 데이터 삭제
-        moodAnalysisRepository.deleteById(moodLog.getId());
-        moodLogRepository.deleteById(analysis.getId());
+        moodAnalysisRepository.delete(analysis);
+        moodLogRepository.delete(moodLog);
+
         log.info("일기 삭제 완료");
         return true;
     }
 
     // 이미지 재생성 (기존 이미지 삭제 -> AI 재생성 -> DB 업데이트)
     @Transactional
-    public Long regenerateImage(Long id, Long userId) {
+    public CalendarDetailResponseDto regenerateImage(Long id, Long userId) {
         // 본인 일기인지 확인
         MoodLog moodLog = calendarRepository.findByIdAndUser_Id(id, userId)
                 .orElseThrow(() -> new IllegalArgumentException("일기를 찾을 수 없거나 접근 권한이 없습니다."));
@@ -103,7 +104,19 @@ public class CalendarService {
 
         // AI 이미지 생성 요청 (일기 내용을 재사용)
         moodLogService.processAiAnalysis(user.orElse(null), moodLog);
+        MoodAnalysis newAnalysis = moodLog.getMoodAnalysis();
 
-        return moodLog.getId();
+        List<String> mainKeyword = (newAnalysis != null && newAnalysis.getKeywords() != null && !newAnalysis.getKeywords().isEmpty())
+                ? newAnalysis.getKeywords()
+                : List.of();
+
+        return new CalendarDetailResponseDto(
+                moodLog.getId(),
+                moodLog.getLogDate(),
+                mainKeyword,
+                newAnalysis.getImageUrl(),
+                moodLog.getContent(),
+                newAnalysis.getMoodScore()
+        );
     }
 }

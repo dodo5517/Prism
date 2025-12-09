@@ -53,21 +53,21 @@ public class MoodLogController {
 
     // 일기 삭제 (이미지 + 데이터)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteDiary(
+    public ResponseEntity<ApiResponse<Void>> deleteDiary(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long id // moodLogId
     ) {
         calendarService.deleteLog(id, userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     // 이미지 재생성 (본문 유지, AI만 다시 요청)
     @PostMapping("/{id}/regenerate")
-    public ApiResponse<Long> regenerateImage(
+    public ApiResponse<CalendarDetailResponseDto> regenerateImage(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long id // moodLogId
     ) {
-        Long logId = calendarService.regenerateImage(id, userId);
-        return ApiResponse.success(logId);
+        CalendarDetailResponseDto detail = calendarService.regenerateImage(id, userId);
+        return ApiResponse.success(detail);
     }
 }
