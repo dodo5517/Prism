@@ -28,3 +28,15 @@ export const getDiaryDetail = async (id: number): Promise<CalendarDetailResponse
     const response = await api.get<ApiResponse<CalendarDetailResponseDto>>(`/logs/${id}`);
     return response.data.data;
 };
+
+// 일기 삭제(일기 + 분석 삭제)
+export const deleteLog = async (id: number): Promise<boolean> => {
+    const response = await api.delete<ApiResponse<void>>(`/logs/${id}`);
+    return response.data.success;
+};
+
+// 이미지 재생성(기록 내용으로 AI만 재생성)
+export const regenerateImage = async (id: number): Promise<CalendarDetailResponseDto> => {
+    const response = await api.post<ApiResponse<CalendarDetailResponseDto>>(`/logs/${id}/regenerate`);
+    return response.data.data;
+};
