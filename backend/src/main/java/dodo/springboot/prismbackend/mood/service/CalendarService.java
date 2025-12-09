@@ -44,7 +44,8 @@ public class CalendarService {
                 moodLog.getLogDate(),
                 mainKeyword,
                 imageUrl,
-                moodLog.getContent()
+                moodLog.getContent(),
+                analysis.getMoodScore()
         );
     }
 }

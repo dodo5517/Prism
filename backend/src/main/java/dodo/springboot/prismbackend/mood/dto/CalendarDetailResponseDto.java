@@ -7,8 +7,9 @@ import java.util.List;
 public record CalendarDetailResponseDto(
         Long id,
         LocalDate date,
-        List<String> keyword,
+        List<String> keywords,
         String imageUrl,
-        String content
+        String content,
+        Integer moodScore
 ) {
 }
