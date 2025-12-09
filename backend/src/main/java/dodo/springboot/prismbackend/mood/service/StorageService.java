@@ -8,6 +8,9 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -30,11 +33,18 @@ public class StorageService {
             log.error("리사이징 실패로 업로드 중단");
             return null;
         }
-        // 파일명 확장자 변경 (.png -> .jpg)
-        String jpgFilename = filename.replace(".png", ".jpg");
+        // 날짜(타임스탬프) 생성
+        String timestamp = LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+
+        // 모든 확장자 제거
+        String baseName = filename.replaceAll("\\.\\w+$", "");
+        // 날짜 붙이고 확장자는 .jpg로
+        String jpgFilename = timestamp + "_" + baseName + ".jpg";
 
         // 공개 url 생성
         String url = supabaseUrl + "/storage/v1/object/" + supabaseBucketName + "/" + jpgFilename;
+
         try {
             webClientBuilder.build().post()
                     .uri(url)

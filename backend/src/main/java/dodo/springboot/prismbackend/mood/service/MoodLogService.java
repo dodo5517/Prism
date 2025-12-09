@@ -13,8 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -55,8 +53,8 @@ public class MoodLogService {
         // Supabase storage 업로드
         String imageUrl = null;
         if (imageBytes != null) {
-            // 파일명 중복 방지를 위해 UUID 사용 (일단 .png로 저장 -> StorageService가 .jpg로 바꿈)
-            String filename = "user_" + userId + "_" + UUID.randomUUID() + ".png";
+            // 일단 .png로 저장 -> StorageService가 .jpg로 바꿈
+            String filename = "user_" + userId + "_" + ".png";
             imageUrl = storageService.uploadImage(imageBytes, filename);
         }
 
