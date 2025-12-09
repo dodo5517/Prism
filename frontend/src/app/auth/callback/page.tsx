@@ -3,6 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, Suspense } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import {jwtDecode} from "jwt-decode";
+import {JwtPayload} from "@/types/JwtPayload";
 
 // useSearchParams를 쓰려면 Suspense로 감싸야 함.
 function CallbackContent() {
@@ -13,24 +15,28 @@ function CallbackContent() {
     useEffect(() => {
         // URL에서 accessToken 추출
         const accessToken = searchParams.get('accessToken');
-
         if (accessToken) {
-            const tempUser = { // 임시로
-                id: 0,
-                email: "",
-                nickname: "User",
-                role: "USER"
-            };
+            try {
+                // 토큰 해독
+                const decoded = jwtDecode<JwtPayload>(accessToken);
 
-            // 토큰 저장
-            login(tempUser, accessToken);
-            console.log("로그인 성공! Zustand Store 업데이트 완료.");
+                // 유저 객체 생성
+                const user = {
+                    id: Number(decoded.sub) || 0,
+                    email: decoded.email || "",
+                    nickname: decoded.nickname || "",
+                    role: decoded.role || "USER"
+                };
 
-            // 메인 페이지로 이동
-            router.push('/');
-        } else {
-            console.error("토큰이 없습니다. 로그인 실패.");
-            router.push('/');
+                // 로그인 처리
+                login(user, accessToken);
+                console.log("로그인 성공! 환영합니다.");
+
+                router.push('/');
+            }catch (error) {
+                console.error("토큰 해독 실패:", error);
+                router.push('/');
+            }
         }
     }, [searchParams, router, login]);
 
