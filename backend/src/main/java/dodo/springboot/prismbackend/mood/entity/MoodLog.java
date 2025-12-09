@@ -3,14 +3,13 @@ package dodo.springboot.prismbackend.mood.entity;
 import dodo.springboot.prismbackend.global.entity.BaseTimeEntity;
 import dodo.springboot.prismbackend.user.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.time.LocalDate;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "mood_logs")
 public class MoodLog extends BaseTimeEntity {
@@ -28,13 +27,14 @@ public class MoodLog extends BaseTimeEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @OneToOne(mappedBy = "moodLog", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "moodLog", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private MoodAnalysis moodAnalysis;
 
     @Builder
-    public MoodLog(User user, LocalDate logDate, String content) {
+    public MoodLog(User user, LocalDate logDate, String content, MoodAnalysis moodAnalysis) {
         this.user = user;
         this.logDate = logDate;
         this.content = content;
+        this.moodAnalysis = moodAnalysis;
     }
 }

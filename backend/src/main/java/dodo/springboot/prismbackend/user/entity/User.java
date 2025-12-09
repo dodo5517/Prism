@@ -32,7 +32,7 @@ public class User extends BaseTimeEntity {
     private String providerId; // 구글 고유 ID
 
     @Column(columnDefinition = "TEXT")
-    private String characterDescription = "Golden Hamster"; // 본인 캐릭터
+    private String characterDescription = "dog"; // 본인 캐릭터
 
     @Builder
     public User(String email, String nickname, Role role, String provider, String providerId) {
