@@ -2,6 +2,7 @@ package dodo.springboot.prismbackend.config;
 
 import dodo.springboot.prismbackend.auth.handler.OAuth2SuccessHandler;
 import dodo.springboot.prismbackend.auth.jwt.JwtAuthFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,6 +35,15 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // 세션 사용 안 함 (JWT 사용 -> Stateless(세션저장X))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // 인증 실패(401) 및 권한 없음(403) 예외 처리 핸들러 추가
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // 리다이렉트 대신 401 JSON 응답 반환예외 처리 핸들러 추가
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"인증 토큰이 없거나 유효하지 않습니다.\"}");
+                        })
+                )
                 // URL 권한 설정
                 .authorizeHttpRequests(auth -> auth
                         // 아무나 접근 가능
