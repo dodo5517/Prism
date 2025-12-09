@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
+import api from "@/api/axios";
+import { useAuthStore } from '@/store/authStore';
 
 export default function Home() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const router = useRouter();
+    const login = useAuthStore((state) => state.login);
 
     useEffect(() => {
         // 화면 켜질 때 토큰 있는지 확인
@@ -16,6 +19,7 @@ export default function Home() {
         }
     }, []);
 
+    // 로그아웃 핸들러
     const handleLogout = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
@@ -26,20 +30,29 @@ export default function Home() {
     // 게스트 로그인 핸들러
     const handleGuestLogin = async () => {
         try {
-            // 백엔드 게스트 로그인 API 호출
-            const res = await fetch('http://localhost:8080/api/auth/guest');
-            const data = await res.json();
+            const response = await api.get('/auth/guest');
+            const data = response.data;
 
             if (data.accessToken) {
-                localStorage.setItem('accessToken', data.accessToken);
-                alert(`환영합니다, ${data.nickname}님! (게스트 모드)`);
-                window.location.reload(); // 새로고침해서 로그인 상태 반영
+                const guestUser = {
+                    id: data.id || 0,
+                    email: 'guest@prism.com',
+                    nickname: data.nickname || '게스트',
+                    role: 'USER'
+                };
+
+                login(guestUser, data.accessToken);
+
+                alert(`환영합니다, ${guestUser.nickname}님! (게스트 모드)`);
+                setIsLoggedIn(true);
+
+                router.push('/');
             }
         } catch (error) {
             console.error("게스트 로그인 실패", error);
-            alert("게스트 로그인 실패");
+            alert("게스트 로그인에 실패했습니다.");
         }
-    };
+    }
 
     return (
         <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gradient-to-br from-indigo-50 to-white gap-8">
@@ -55,7 +68,7 @@ export default function Home() {
                         로그인 되었습니다
                     </div>
 
-                    <Link href="/logs/write" className="w-full py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition font-medium text-center shadow-lg shadow-indigo-200">
+                    <Link href="/write" className="w-full py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition font-medium text-center shadow-lg shadow-indigo-200">
                         오늘의 일기 쓰기
                     </Link>
 
