@@ -1,110 +1,265 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from 'next/navigation';
-import api from "@/api/axios";
+import React, { useState, useEffect, useMemo } from "react";
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, setMonth, isSameMonth, isSameDay } from 'date-fns';
 import { useAuthStore } from '@/store/authStore';
+import {getCalendar, getDiaryDetail} from '@/api/diaryApi';
+import ResultModal from '@/components/ResultModal';
+import LoadingScreen from '@/components/LoadingScreen';
+import LoginView from '@/components/Login';
+import WriteModal from '@/components/WriteModal';
+
+import { CalendarDetailResponseDto, CalendarResponseDto } from "@/types/diary";
 
 export default function Home() {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const router = useRouter();
-    const login = useAuthStore((state) => state.login);
+    const { isAuthenticated, logout } = useAuthStore();
 
+    // 상태 관리
+    const [currentDate, setCurrentDate] = useState<Date>(new Date());
+    const [diaries, setDiaries] = useState<CalendarResponseDto[]>([]);
+    const [selectedDate, setSelectedDate] = useState('');
+    const [selectedDetail, setSelectedDetail] = useState<CalendarDetailResponseDto | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+    // 모달 상태
+    const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
+
+    // 초기화 및 데이터 로딩
     useEffect(() => {
-        // 화면 켜질 때 토큰 있는지 확인
-        const token = localStorage.getItem('accessToken');
-        if (token) {
-            setIsLoggedIn(true);
-        }
+        setIsMounted(true);
     }, []);
 
-    // 로그아웃 핸들러
-    const handleLogout = () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        setIsLoggedIn(false);
-        alert("로그아웃 되었습니다.");
+    useEffect(() => {
+        if (isAuthenticated && isMounted) {
+            fetchDiaries(currentDate);
+        }
+    }, [currentDate, isAuthenticated, isMounted]);
+
+    const fetchDiaries = async (date: Date) => {
+        setIsLoading(true);
+        try {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const data = await getCalendar(year, month);
+            setDiaries(data);
+        } catch (error) {
+            console.error("데이터 로드 실패:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    // 게스트 로그인 핸들러
-    const handleGuestLogin = async () => {
-        try {
-            const response = await api.get('/auth/guest');
-            const data = response.data;
+    // 달력 그리드 생성(date-fns 활용)
+    const calendarDays = useMemo(() => {
+        const monthStart = startOfMonth(currentDate);
+        const monthEnd = endOfMonth(monthStart);
+        const startDate = startOfWeek(monthStart); // 일요일 시작 기준
+        const endDate = endOfWeek(monthEnd);
 
-            if (data.accessToken) {
-                const guestUser = {
-                    id: data.id || 0,
-                    email: 'guest@prism.com',
-                    nickname: data.nickname || '게스트',
-                    role: 'USER'
-                };
+        const days = eachDayOfInterval({ start: startDate, end: endDate });
 
-                login(guestUser, data.accessToken);
-
-                alert(`환영합니다, ${guestUser.nickname}님! (게스트 모드)`);
-                setIsLoggedIn(true);
-
-                router.push('/');
-            }
-        } catch (error) {
-            console.error("게스트 로그인 실패", error);
-            alert("게스트 로그인에 실패했습니다.");
+        // 주 단위로 묶기
+        const weeks = [];
+        for (let i = 0; i < days.length; i += 7) {
+            weeks.push(days.slice(i, i + 7));
         }
-    }
+        return weeks;
+    }, [currentDate]);
+
+    // 달 이동 핸들러
+    const handleMonthChange = (monthIndex: number) => {
+        const newDate = setMonth(currentDate, monthIndex - 1);
+        setCurrentDate(newDate);
+    };
+
+    const handleDateClick = async (date: Date) => {
+        const dateString = format(date, 'yyyy-MM-dd');
+        // 해당 날짜에 일기가 있는지 확인
+        const diary = diaries.find((d) => d.date === dateString);
+        if (diary) {
+            try {
+                // 로딩 표시 필요시 setIsLoading(true);
+                // 상제 조회 API 호출
+                const detailData = await getDiaryDetail(diary.id);
+
+                // 받아온 상세 데이터로 모달 열기
+                setSelectedDetail(detailData);
+            } catch (error) {
+                console.error("상세 조회 실패:", error);
+                alert("일기 내용을 불러오는 데 실패했습니다.");
+            } finally {
+                // setIsLoading(false);
+            }
+        } else {
+            // 일기가 없으면 쓰기 모달 열기
+            openWriteModal(dateString);
+        }
+    };
+
+    const openWriteModal = (dateStr: string) => {
+        setSelectedDate(dateStr);
+        setIsWriteModalOpen(true);
+    };
+
+    // 상수 데이터
+    const daysOfWeek: string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months: number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+    if (!isMounted) return null;
+
+    // 로그인 전 화면
+    if (!isAuthenticated) return <LoginView />;
 
     return (
-        <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gradient-to-br from-indigo-50 to-white gap-8">
-            {/* 로고 영역 */}
-            <div className="text-center space-y-2">
-                <h1 className="text-5xl font-bold text-indigo-600 tracking-tighter">Prism</h1>
-            </div>
+        <main className="min-h-screen bg-stone-200 p-2 sm:p-4 md:p-6 lg:p-8 flex items-center justify-center font-sans">
+            <div className="w-full max-w-xs sm:max-w-lg md:max-w-3xl lg:max-w-4xl bg-amber-50/90 rounded-lg shadow-2xl overflow-hidden border border-stone-300/50 relative">
 
-            {isLoggedIn ? (
-                /* 로그인 했을 때 보여줄 화면 */
-                <div className="flex flex-col gap-4 items-center w-full max-w-xs animate-fade-in">
-                    <div className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-semibold mb-2">
-                        로그인 되었습니다
+                {/* 상단 로그아웃/쓰기 버튼 */}
+                <div className="absolute top-3 right-4 z-20 flex gap-2">
+                    <button onClick={() => openWriteModal(format(new Date(), "yyyy-MM-dd"))}
+                            className="text-[10px] sm:text-xs bg-stone-600 text-amber-50 px-2 py-1 rounded hover:bg-stone-800 transition">
+                        + WRITE
+                    </button>
+                    <button
+                        onClick={() => { if(confirm("로그아웃 하시겠습니까?")) logout(); }}
+                        className="text-[10px] sm:text-xs text-stone-400 hover:text-red-400 underline"
+                    >
+                        LOGOUT
+                    </button>
+                </div>
+
+                {/* Header */}
+                <div className="bg-stone-300/50 px-4 py-3 flex flex-col gap-4 border-b border-stone-300/70">
+
+                    {/* 년도 | 로고 | 버튼 */}
+                    <div className="flex items-center justify-between w-full relative">
+                        {/* 년도 */}
+                        <div className="text-stone-500 text-sm font-serif font-bold italic w-20">
+                            {format(currentDate, 'yyyy')}
+                        </div>
+
+                        {/* 로고 */}
+                        <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl sm:text-3xl font-serif font-extrabold text-indigo-900 tracking-widest uppercase drop-shadow-sm">
+                            Prism
+                        </h1>
+
+                        {/* 버튼 */}
+                        <div className="flex gap-2 w-20 justify-end z-10">
+                            <button onClick={() => openWriteModal('')}
+                                className="text-[10px] sm:text-xs bg-stone-600 text-amber-50 px-2 py-1 rounded hover:bg-stone-800 transition whitespace-nowrap">
+                                + WRITE
+                            </button>
+                            <button
+                                onClick={() => { if(confirm("로그아웃 하시겠습니까?")) logout(); }}
+                                className="text-[10px] sm:text-xs text-stone-500 hover:text-red-500 underline whitespace-nowrap"
+                            >
+                                LOGOUT
+                            </button>
+                        </div>
                     </div>
 
-                    <Link href="/write" className="w-full py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition font-medium text-center shadow-lg shadow-indigo-200">
-                        오늘의 일기 쓰기
-                    </Link>
-
-                    <button
-                        onClick={handleLogout}
-                        className="text-gray-400 hover:text-gray-600 text-sm underline mt-2"
-                    >
-                        로그아웃
-                    </button>
+                    {/* 월 선택 버튼 (1~12)*/}
+                    <div className="flex items-center justify-center gap-1 sm:gap-2 w-full overflow-x-auto pb-1 scrollbar-hide">
+                        {months.map((m) => (
+                            <button
+                                key={m}
+                                onClick={() => handleMonthChange(m)}
+                                className={`flex-shrink-0 text-[10px] sm:text-xs w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full transition-all duration-300 ${
+                                    m === (currentDate.getMonth() + 1)
+                                        ? 'bg-red-400 text-white font-bold shadow-md scale-110'
+                                        : 'text-stone-400 hover:bg-stone-200 hover:text-stone-600'
+                                }`}
+                            >
+                                {m}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            ) : (
-                /* 로그인 안 했을 때 버튼 */
-                <div className="flex flex-col gap-3 w-full max-w-xs">
-                    {/* 구글 로그인 버튼 */}
-                    <a
-                        href="http://localhost:8080/oauth2/authorization/google"
-                        className="flex items-center justify-center gap-3 w-full py-3 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition text-gray-700 font-medium"
-                    >
-                        <svg className="w-5 h-5" viewBox="0 0 24 24">
-                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                        </svg>
-                        Google로 계속하기
-                    </a>
 
-                    {/* 게스트 로그인 버튼 */}
-                    <button
-                        onClick={handleGuestLogin}
-                        className="flex items-center justify-center gap-2 w-full py-3 bg-gray-900 text-white rounded-xl shadow-lg hover:bg-black transition font-medium"
-                    >
-                        게스트로 체험하기
-                    </button>
+                <div className="grid grid-cols-7 border-b border-stone-300/50 bg-amber-50/50">
+                    {daysOfWeek.map((day, index) => (
+                        <div
+                            key={day}
+                            className={`py-2 text-center text-[10px] sm:text-xs font-serif font-bold uppercase tracking-wider ${
+                                index === 0 ? 'text-red-400' : index === 6 ? 'text-blue-400' : 'text-stone-500'
+                            }`}
+                        >
+                            {day}
+                        </div>
+                    ))}
                 </div>
-            )}
+
+                {/* Calendar Grid */}
+                <div className="relative bg-amber-50">
+                    {calendarDays.map((week, weekIndex) => (
+                        <div key={weekIndex} className="grid grid-cols-7 border-b border-stone-200/60 last:border-b-0">
+                            {week.map((day, dayIndex) => {
+                                const dateString = format(day, 'yyyy-MM-dd');
+                                const diary = diaries.find((d) => d.date === dateString);
+                                const isCurrentMonth = isSameMonth(day, currentDate);
+                                const isToday = isSameDay(day, new Date());
+                                const isWeekend = dayIndex === 0 || dayIndex === 6; // 0:Sun, 6:Sat
+
+                                return (
+                                    <div
+                                        key={day.toString()}
+                                        onClick={() => handleDateClick(day)}
+                                        className={`
+                                            min-h-[60px] sm:min-h-[80px] md:min-h-[100px] lg:min-h-[110px] 
+                                            p-1 border-r border-stone-200/40 last:border-r-0 relative group cursor-pointer transition-colors
+                                            ${!isCurrentMonth ? 'bg-stone-100/50 text-stone-300' : 'text-stone-600 hover:bg-amber-100/30'}
+                                            ${isToday ? 'bg-indigo-50/60' : ''}
+                                        `}
+                                    >
+                                        {/* 날짜 숫자 */}
+                                        <span className={`
+                                            relative z-10 text-[10px] sm:text-xs font-medium px-1 rounded
+                                            ${dayIndex === 0 ? 'text-red-400' : dayIndex === 6 ? 'text-blue-400' : ''}
+                                            ${isToday ? 'bg-indigo-500 text-white font-bold shadow-sm' : ''}
+                                        `}>
+                                            {format(day, 'd')}
+                                        </span>
+
+                                        {/* 이미지 */}
+                                        {diary && (
+                                            <div className="absolute inset-0 z-0">
+                                                {/* 이미지 */}
+                                                <img
+                                                    src={diary.imageUrl}
+                                                    alt="image"
+                                                    className="w-full h-full p-[1px] rounded-[4px] object-cover grayscale-[20%] duration-500"
+                                                />
+
+                                                {/*/!* 감정 테두리 (Overlay) *!/*/}
+                                                {/*<div className={`absolute inset-0 border-[3px] pointer-events-none transition-colors duration-300 ${*/}
+                                                {/*    diary.moodScore >= 8 ? 'border-pink-300/70' :*/}
+                                                {/*        diary.moodScore >= 4 ? 'border-transparent' : 'border-stone-400/50'*/}
+                                                {/*}`} />*/}
+
+                                                {/* 감정 점수 (작게 표시) - 선택사항 */}
+                                                {/* <div className="absolute bottom-1 right-1 bg-white/80 px-1 rounded text-[8px] font-bold text-stone-600">
+                                                    {diary.moodScore}
+                                                </div> */}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* 모달 및 로딩 */}
+            <WriteModal
+                isOpen={isWriteModalOpen}
+                onClose={() => setIsWriteModalOpen(false)}
+                selectedDate={selectedDate}
+            />
+            {selectedDetail &&
+                <ResultModal data={selectedDetail} onClose={() => setSelectedDetail(null)}/>
+            }
+            {isLoading && <LoadingScreen />}
         </main>
     );
-}
+};
