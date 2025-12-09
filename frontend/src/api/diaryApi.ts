@@ -16,8 +16,10 @@ export const createDiary = async (date:string, content: string): Promise<number>
 };
 
 // 달력 조회
-export const getCalendar = async (): Promise<CalendarResponseDto> => {
-    const response = await api.get<ApiResponse<CalendarResponseDto>>(`/logs`);
+export const getCalendar = async (year: number, month: number): Promise<CalendarResponseDto[]> => {
+    const response = await api.get<ApiResponse<CalendarResponseDto[]>>(`/logs/monthly`,{
+        params: { year, month }
+    });
     return response.data.data;
 };
 
