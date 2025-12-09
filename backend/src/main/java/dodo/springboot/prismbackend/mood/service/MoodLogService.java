@@ -45,6 +45,7 @@ public class MoodLogService {
     }
 
     // AI 처리 메서드
+    @Transactional
     public void processAiAnalysis(User user, MoodLog moodLog) {
         // Gemini 분석 (그림 묘사 프롬프트 생성)
         // 유저의 캐릭터 설정 가져오기
@@ -59,18 +60,24 @@ public class MoodLogService {
         String imageUrl = null;
         if (imageBytes != null) {
             // 일단 .png로 저장 -> StorageService가 .jpg로 바꿈
-            String filename = "user_" + user.getId() + "_" + System.currentTimeMillis() + ".png";
+            String filename = "user_" + user.getId() + "_" + ".png";
             imageUrl = storageService.uploadImage(imageBytes, filename);
         }
 
-        // 최종 결과 DB 저장
-        moodAnalysisRepository.save(MoodAnalysis.builder()
+        // MoodAnalysis 객체 생성
+        MoodAnalysis newAnalysis = MoodAnalysis.builder()
                 .moodLog(moodLog)
                 .representativeMood(aiResult.representativeMood())
                 .moodScore(aiResult.moodScore())
                 .keywords(aiResult.keywords())
                 .imagePrompt(aiResult.imagePrompt())
                 .imageUrl(imageUrl)
-                .build());
+                .build();
+
+        // MoodAnalysis 저장
+        moodAnalysisRepository.save(newAnalysis);
+
+        // MoodLog에 분석 결과 연결
+        moodLog.setMoodAnalysis(newAnalysis);
     }
 }
