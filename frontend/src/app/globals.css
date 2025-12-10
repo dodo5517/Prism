@@ -24,3 +24,19 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(10px) scale(0.9); }
+    50% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-10px) scale(1.1); }
+}
+.animate-fade-in-up {
+    animation: fadeInUp 2.5s ease-in-out infinite;
+}
+@keyframes progressInfinite {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+.animate-progress-infinite {
+    animation: progressInfinite 2.5s linear infinite;
+}

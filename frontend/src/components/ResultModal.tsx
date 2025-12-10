@@ -38,19 +38,15 @@ const ResultModal: React.FC<ResultModalProps> = ({ data, onClose, onUpdateDiary,
     const handleDelete = async (id:number) => {
         if (!confirm('정말 삭제하시겠습니까? 복구할 수 없습니다.')) return;
         try {
-            setIsLoading(true); // 전체 로딩
             await deleteLog(id);
             alert('삭제되었습니다.');
-
             // 달력에서 삭제 하도록 전달
             onDeleteDiary?.(id);
-
-            onClose(); // 모달 닫기
         } catch (error) {
             console.error(error);
             alert('삭제 실패했습니다.');
         } finally {
-            setIsLoading(false);
+            onClose(); // 모달 닫기
         }
     };
 

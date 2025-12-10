@@ -8,8 +8,8 @@ const LoadingScreen: React.FC = () => {
             {/* 빙글빙글 도는 스피너 */}
             <div className="w-16 h-16 mb-4 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
 
-            <h3 className="text-xl font-bold mb-2">AI가 그림을 그리고 있어요...</h3>
-            <p className="text-gray-300 text-sm">잠시만 기다려주세요 (약 5~10초 소요)</p>
+            <h3 className="text-xl font-bold mb-2">AI가 내용을 분석하고 있어요...</h3>
+            <p className="text-gray-300 text-sm">잠시만 기다려주세요</p>
         </div>
     );
 };
