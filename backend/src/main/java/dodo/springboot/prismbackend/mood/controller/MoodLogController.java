@@ -3,6 +3,7 @@ package dodo.springboot.prismbackend.mood.controller;
 import dodo.springboot.prismbackend.global.dto.ApiResponse;
 import dodo.springboot.prismbackend.mood.dto.CalendarDetailResponseDto;
 import dodo.springboot.prismbackend.mood.dto.CalendarResponseDto;
+import dodo.springboot.prismbackend.mood.dto.MoodLogAnalysisResponseDto;
 import dodo.springboot.prismbackend.mood.dto.MoodLogRequestDto;
 import dodo.springboot.prismbackend.mood.service.CalendarService;
 import dodo.springboot.prismbackend.mood.service.MoodLogService;
@@ -21,12 +22,23 @@ public class MoodLogController {
     private final MoodLogService moodLogService;
     private final CalendarService calendarService;
 
+    // 일기 저장 및 분석
     @PostMapping
-    public ApiResponse<Long> createLog(
+    public ApiResponse<MoodLogAnalysisResponseDto> createLog(
             @AuthenticationPrincipal Long userId, // JWT 필터가 id 찾아줌.
             @RequestBody MoodLogRequestDto requestDto
     ) {
-        Long logId = moodLogService.createMoodLog(userId, requestDto);
+        MoodLogAnalysisResponseDto result = moodLogService.analyzeDiary(userId, requestDto);
+        return ApiResponse.success(result);
+    }
+
+    // 이미지 생성
+    @PostMapping("/{id}/image")
+    public ApiResponse<Long> generateImage(
+            @AuthenticationPrincipal Long userId, // 본인 확인용
+            @PathVariable Long id // moodLogId
+    ) {
+        Long logId = moodLogService.generateImageForLog(id, userId);
         return ApiResponse.success(logId);
     }
 
