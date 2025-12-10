@@ -74,12 +74,13 @@ public class MoodLogController {
     }
 
     // 이미지 재생성 (본문 유지, AI만 다시 요청)
+    // 키워드 제공까지만 하니까 여기도 이미지 셍성 API("/{id}/image") 재호출 해야 함.
     @PostMapping("/{id}/regenerate")
-    public ApiResponse<CalendarDetailResponseDto> regenerateImage(
+    public ApiResponse<MoodLogAnalysisResponseDto> regenerateImage(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long id // moodLogId
     ) {
-        CalendarDetailResponseDto detail = calendarService.regenerateImage(id, userId);
-        return ApiResponse.success(detail);
+        MoodLogAnalysisResponseDto result = calendarService.regenerateImage(id, userId);
+        return ApiResponse.success(result);
     }
 }

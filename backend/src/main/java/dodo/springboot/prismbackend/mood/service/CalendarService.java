@@ -2,6 +2,7 @@ package dodo.springboot.prismbackend.mood.service;
 
 import dodo.springboot.prismbackend.mood.dto.CalendarDetailResponseDto;
 import dodo.springboot.prismbackend.mood.dto.CalendarResponseDto;
+import dodo.springboot.prismbackend.mood.dto.MoodLogAnalysisResponseDto;
 import dodo.springboot.prismbackend.mood.entity.MoodAnalysis;
 import dodo.springboot.prismbackend.mood.entity.MoodLog;
 import dodo.springboot.prismbackend.user.entity.User;
@@ -87,38 +88,34 @@ public class CalendarService {
 
     // 이미지 재생성 (기존 이미지 삭제 -> AI 재생성 -> DB 업데이트)
     @Transactional
-    public CalendarDetailResponseDto regenerateImage(Long id, Long userId) {
+    public MoodLogAnalysisResponseDto regenerateImage(Long id, Long userId) {
         // 본인 일기인지 확인
         MoodLog moodLog = calendarRepository.findByIdAndUser_Id(id, userId)
                 .orElseThrow(() -> new IllegalArgumentException("일기를 찾을 수 없거나 접근 권한이 없습니다."));
-        MoodAnalysis analysis = moodLog.getMoodAnalysis();
-        Optional<User> user = userRepository.findById(userId);
+        MoodAnalysis oldAnalysis = moodLog.getMoodAnalysis();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
 
 
         if (moodLog.getMoodAnalysis() != null) {
             // 스토리지에서 이미지 파일 삭제
-            storageService.deleteStorageImage(analysis.getImageUrl());
+            storageService.deleteStorageImage(oldAnalysis.getImageUrl());
 
             // DB에서 analysis 삭제
             moodLog.setMoodAnalysis(null);
             calendarRepository.flush();
         }
 
-        // AI 이미지 생성 요청 (일기 내용을 재사용)
-        moodLogService.processAiAnalysis(user.orElse(null), moodLog);
+        // 새로운 Gemini 분석(프롬프트) 및 결과 저장
+        moodLogService.processAiAnalysis(user, moodLog);
+
         MoodAnalysis newAnalysis = moodLog.getMoodAnalysis();
 
-        List<String> mainKeyword = (newAnalysis != null && newAnalysis.getKeywords() != null && !newAnalysis.getKeywords().isEmpty())
-                ? newAnalysis.getKeywords()
-                : List.of();
-
-        return new CalendarDetailResponseDto(
+        // 키워드 리턴
+        return new MoodLogAnalysisResponseDto(
                 moodLog.getId(),
-                moodLog.getLogDate(),
-                mainKeyword,
-                newAnalysis.getImageUrl(),
-                moodLog.getContent(),
-                newAnalysis.getMoodScore()
+                newAnalysis.getKeywords(),
+                newAnalysis.getRepresentativeMood()
         );
     }
 }
