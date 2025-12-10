@@ -11,21 +11,25 @@ import java.util.List;
 
 public interface MoodAnalysisRepository extends JpaRepository<MoodAnalysis, Long> {
 
-    // 해당 기간의 Top3 키워드 조회 쿼리
+    // 해당 기간의 Top3 키워드 조회 쿼리(공동 등수 포함)
     @Query(value = """
+    SELECT 
+        sub.keyword, 
+        sub.count
+    FROM (
         SELECT
             T.keyword AS keyword,
-            COUNT(T.keyword) AS count
+            COUNT(T.keyword) AS count,
+            -- COUNT 기준으로 공동 순위를 매김
+            DENSE_RANK() OVER (ORDER BY COUNT(T.keyword) DESC) as ranking
         FROM mood_analysis ma
         JOIN mood_logs ml ON ma.mood_log_id = ml.id
-        -- unnest 함수 (PostgreSQL 배열(text[])을 행으로 풀어줌)
-        -- CROSS JOIN LATERAL을 사용하여 각 행의 배열을 펼침
         CROSS JOIN LATERAL unnest(ma.keywords) AS T(keyword)
         WHERE ml.log_date BETWEEN :startDate AND :endDate
         GROUP BY T.keyword
-        ORDER BY count DESC
-        LIMIT 3
-    """, nativeQuery = true)
+    ) sub
+    WHERE sub.ranking <= 3 
+""", nativeQuery = true)
     List<KeywordStatisticsDto> findTopKeywordsByUserIdAndPeriod(
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
