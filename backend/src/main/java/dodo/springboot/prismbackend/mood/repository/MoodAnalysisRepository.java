@@ -14,8 +14,9 @@ public interface MoodAnalysisRepository extends JpaRepository<MoodAnalysis, Long
     // 해당 기간의 Top3 키워드 조회 쿼리(공동 등수 포함)
     @Query(value = """
     SELECT 
-        sub.keyword, 
-        sub.count
+        sub.count AS count,
+        -- 같은 count를 가진 키워드들을 쉼표(,)로 합침.
+        STRING_AGG(sub.keyword, ', ' ORDER BY sub.keyword) AS keywords
     FROM (
         SELECT
             T.keyword AS keyword,
@@ -28,7 +29,10 @@ public interface MoodAnalysisRepository extends JpaRepository<MoodAnalysis, Long
         WHERE ml.log_date BETWEEN :startDate AND :endDate
         GROUP BY T.keyword
     ) sub
-    WHERE sub.ranking <= 3 
+    WHERE sub.ranking <= 3
+    -- 등수별로 그룹화
+    GROUP BY sub.count, sub.ranking
+    ORDER BY sub.ranking ASC
 """, nativeQuery = true)
     List<KeywordStatisticsDto> findTopKeywordsByUserIdAndPeriod(
             @Param("startDate") LocalDate startDate,
