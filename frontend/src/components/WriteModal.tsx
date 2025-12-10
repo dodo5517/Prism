@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {analyzeDiary, generateImageOnly, getDiaryDetail} from '@/api/diaryApi';
-import {CalendarDetailResponseDto, CalendarResponseDto} from '@/types/diary';
+import {AnalyzeResponse, CalendarDetailResponseDto, CalendarResponseDto} from '@/types/diary';
 import LoadingScreen from '@/components/LoadingScreen';
 import ResultModal from '@/components/ResultModal';
 import {format} from "date-fns";
@@ -52,7 +52,7 @@ const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose, selectedDate, 
         try {
             // 분석 시작 (기존 LoadingScreen 표시)
             setIsAnalyzing(true);
-            const analysisResult = await analyzeDiary(date, content);
+            const analysisResult:AnalyzeResponse = await analyzeDiary(date, content);
             setIsAnalyzing(false);
 
             // 분석 완료 -> 키워드 애니메이션 시작
@@ -84,6 +84,7 @@ const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose, selectedDate, 
         } finally {
             // 애니메이션 종료
             setIsGenerating(false);
+            setIsLoading(false);
         }
     };
 
@@ -110,12 +111,6 @@ const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose, selectedDate, 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            {/* 키워드 애니메이션 로딩 */}
-            {isGenerating && <KeywordLoading keywords={keywords} />}
-
-            {/* 기본 스피너 로딩 */}
-            {isAnalyzing && <LoadingScreen />}
-
             {/* 모달 박스 */}
             <div
                 className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
@@ -185,6 +180,10 @@ const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose, selectedDate, 
                     </button>
                 </div>
             </div>
+            {/* 키워드 애니메이션 로딩 */}
+            {isGenerating && <KeywordLoading keywords={keywords} />}
+            {/* 기본 스피너 로딩 */}
+            {isAnalyzing && <LoadingScreen />}
         </div>
     );
 };

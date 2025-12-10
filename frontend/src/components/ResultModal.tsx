@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from 'react';
-import { CalendarDetailResponseDto } from '@/types/diary';
-import { deleteLog,regenerateImage } from '@/api/diaryApi';
+import {AnalyzeResponse, CalendarDetailResponseDto} from '@/types/diary';
+import {deleteLog, generateImageOnly, getDiaryDetail, regenerateImage} from '@/api/diaryApi';
 import LoadingScreen from '@/components/LoadingScreen';
+import KeywordLoading from "@/components/KeywordLoading";
 
 interface ResultModalProps {
     data: CalendarDetailResponseDto | null;
@@ -12,7 +13,11 @@ interface ResultModalProps {
 
 const ResultModal: React.FC<ResultModalProps> = ({ data, onClose, onUpdateDiary, onDeleteDiary }) => {
     const [localData, setLocalData] = useState<CalendarDetailResponseDto | null>(data);
-    const [isLoading, setIsLoading] = useState(false);
+
+    // 로딩 상태 분리
+    const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false); // 텍스트 분석 중
+    const [isGenerating, setIsGenerating] = useState<boolean>(false); // 이미지 생성 중
+    const [keywords, setKeywords] = useState<string[]>([]); // 애니메이션용 키워드
 
     useEffect(() => {
         setLocalData(data);
@@ -55,20 +60,33 @@ const ResultModal: React.FC<ResultModalProps> = ({ data, onClose, onUpdateDiary,
         if (!confirm('이미지를 다시 생성하시겠습니까? 기존 이미지는 사라집니다.')) return;
 
         try {
-            setIsLoading(true);
-            const newdata:CalendarDetailResponseDto = await regenerateImage(id);
-            if (newdata) {
+            // 재분석 시작 (기존 LoadingScreen 표시)
+            setIsAnalyzing(true);
+            const newAnalysisResult:AnalyzeResponse = await regenerateImage(id);
+            setIsAnalyzing(false);
+
+            // 분석 완료 -> 키워드 애니메이션 시작
+            setKeywords(newAnalysisResult.keywords);
+            setIsGenerating(true);
+
+            // 이미지 생성 요청
+            await generateImageOnly(newAnalysisResult.logId);
+            // 최종 완료 -> 상세 데이터 가져오기
+            const detailData = await getDiaryDetail(newAnalysisResult.logId);
+
+            if (detailData) {
                 // 현재 보고 있는 모달 데이터 업데이트
-                setLocalData({ ...newdata });
+                setLocalData({ ...detailData });
                 // 달력 업데이트 하도록 전달
-                onUpdateDiary?.(newdata);
+                onUpdateDiary?.(detailData);
             }
 
         } catch (error) {
             console.error(error);
             alert('이미지 생성에 실패했습니다.');
         } finally {
-            setIsLoading(false);
+            // 애니메이션 종료
+            setIsGenerating(false);
         }
     };
 
@@ -167,9 +185,10 @@ const ResultModal: React.FC<ResultModalProps> = ({ data, onClose, onUpdateDiary,
                     </div>
                 </div>
             </div>
-
-            {/* 로딩 화면 */}
-            {isLoading && <LoadingScreen />}
+            {/* 키워드 애니메이션 로딩 */}
+            {isGenerating && <KeywordLoading keywords={keywords} />}
+            {/* 기본 스피너 로딩 */}
+            {isAnalyzing && <LoadingScreen />}
         </div>
     );
 };
