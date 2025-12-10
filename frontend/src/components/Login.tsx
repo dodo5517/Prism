@@ -3,6 +3,8 @@
 import React from 'react';
 import api from "@/api/axios";
 import { useAuthStore } from '@/store/authStore';
+import {User} from "@/types/JwtPayload";
+import {handleDecode} from "@/util/jwt";
 
 const Login = () => {
     const login = useAuthStore((state) => state.login);
@@ -14,13 +16,7 @@ const Login = () => {
             const data = response.data;
 
             if (data.accessToken) {
-                const guestUser = {
-                    id: data.id || 0,
-                    email: 'guest@prism.com',
-                    nickname: data.nickname || '게스트',
-                    role: 'USER'
-                };
-
+                const guestUser: User = handleDecode(data.accessToken);
                 login(guestUser, data.accessToken);
                 alert(`환영합니다, ${guestUser.nickname}님! (게스트 모드)`);
             }

@@ -3,8 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, Suspense } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import {jwtDecode} from "jwt-decode";
-import {JwtPayload} from "@/types/JwtPayload";
+import {User} from "@/types/JwtPayload";
+import {handleDecode} from "@/util/jwt";
 
 // useSearchParams를 쓰려면 Suspense로 감싸야 함.
 function CallbackContent() {
@@ -13,20 +13,12 @@ function CallbackContent() {
     const login = useAuthStore((state) => state.login);
 
     useEffect(() => {
+
         // URL에서 accessToken 추출
         const accessToken = searchParams.get('accessToken');
         if (accessToken) {
             try {
-                // 토큰 해독
-                const decoded = jwtDecode<JwtPayload>(accessToken);
-
-                // 유저 객체 생성
-                const user = {
-                    id: Number(decoded.sub) || 0,
-                    email: decoded.email || "",
-                    nickname: decoded.nickname || "",
-                    role: decoded.role || "USER"
-                };
+                const user: User = handleDecode(accessToken);
 
                 // 로그인 처리
                 login(user, accessToken);
