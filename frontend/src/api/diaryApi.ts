@@ -1,5 +1,5 @@
 import api from './axios';
-import {MoodLogRequestDto, CalendarDetailResponseDto, CalendarResponseDto} from '@/types/diary';
+import {MoodLogRequestDto, CalendarDetailResponseDto, CalendarResponseDto, AnalyzeResponse} from '@/types/diary';
 
 // 공통 응답 형식
 interface ApiResponse<T> {
@@ -8,12 +8,24 @@ interface ApiResponse<T> {
     message: string | null;
 }
 
-// 일기 작성
-export const createDiary = async (date:string, content: string): Promise<number> => {
-    const requestBody: MoodLogRequestDto = { date, content };
-    const response = await api.post<ApiResponse<number>>('/logs', requestBody);
+// 일기 저장 및 분석
+export const analyzeDiary = async (date: string, content: string): Promise<AnalyzeResponse> => {
+    const response = await api.post<ApiResponse<AnalyzeResponse>>('/logs', { date, content });
     return response.data.data;
 };
+
+// 이미지 생성
+export const generateImageOnly = async (logId: number): Promise<number> => {
+    const response = await api.post<ApiResponse<number>>(`/logs/${logId}/image`);
+    return response.data.data;
+};
+
+// 일기 작성
+// export const createDiary = async (date:string, content: string): Promise<number> => {
+//     const requestBody: MoodLogRequestDto = { date, content };
+//     const response = await api.post<ApiResponse<number>>('/logs', requestBody);
+//     return response.data.data;
+// };
 
 // 달력 조회
 export const getCalendar = async (year: number, month: number): Promise<CalendarResponseDto[]> => {

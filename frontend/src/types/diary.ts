@@ -18,3 +18,9 @@ export interface CalendarDetailResponseDto {
     content: string;
     moodScore: number;
 }
+
+export interface AnalyzeResponse {
+    logId: number;
+    keywords: string[];
+    representativeMood: string;
+}

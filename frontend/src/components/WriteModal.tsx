@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { createDiary, getDiaryDetail } from '@/api/diaryApi';
+import {analyzeDiary, generateImageOnly, getDiaryDetail} from '@/api/diaryApi';
 import {CalendarDetailResponseDto, CalendarResponseDto} from '@/types/diary';
 import LoadingScreen from '@/components/LoadingScreen';
 import ResultModal from '@/components/ResultModal';
 import {format} from "date-fns";
+import KeywordLoading from "@/components/KeywordLoading";
 
 interface WriteModalProps {
     isOpen: boolean;
@@ -27,10 +28,16 @@ const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose, selectedDate, 
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [modalData, setModalData] = useState<CalendarDetailResponseDto | null>(null);
 
-    // 모달이 열릴 때마다 날짜 초기화
+    // 로딩 상태 분리
+    const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false); // 텍스트 분석 중
+    const [isGenerating, setIsGenerating] = useState<boolean>(false); // 이미지 생성 중
+    const [keywords, setKeywords] = useState<string[]>([]); // 애니메이션용 키워드
+
+    // 모달이 열릴 때마다 날짜 및 내용 초기화
     useEffect(() => {
         if (isOpen && selectedDate) {
             setDate(selectedDate);
+            setContent('');
         }
     }, [isOpen, selectedDate]);
 
@@ -43,27 +50,40 @@ const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose, selectedDate, 
         setIsLoading(true);
 
         try {
-            // 일기 작성 API 호출
-            const logId = await createDiary(date, content);
-            console.log("생성된 로그 ID:", logId);
+            // 분석 시작 (기존 LoadingScreen 표시)
+            setIsAnalyzing(true);
+            const analysisResult = await analyzeDiary(date, content);
+            setIsAnalyzing(false);
 
-            // 상세 조회 API 호출
-            const detailData = await getDiaryDetail(logId);
-            // 달력에 추가하도록 전달
+            // 분석 완료 -> 키워드 애니메이션 시작
+            setKeywords(analysisResult.keywords);
+            setIsGenerating(true);
+
+            // 이미지 생성 요청
+            await generateImageOnly(analysisResult.logId);
+            // 최종 완료 -> 상세 데이터 가져오기
+            const detailData = await getDiaryDetail(analysisResult.logId);
+
+            // 달력 업데이트
             onAddDiary({
                 id: detailData.id,
                 date: detailData.date,
                 imageUrl: detailData.imageUrl ?? "",
                 moodScore: detailData.moodScore
             });
-            setModalData(detailData);
-            setContent(''); // 내용 초기화
 
+            // 결과 모달 띄우기
+            setModalData(detailData);
+            // 내용 초기화
+            setContent('');
         } catch (error) {
             console.error(error);
             alert("일기 저장 중 오류가 발생했습니다.");
+            // 에러 시 로딩 상태 모두 해제
+            setIsAnalyzing(false);
         } finally {
-            setIsLoading(false);
+            // 애니메이션 종료
+            setIsGenerating(false);
         }
     };
 
@@ -90,6 +110,12 @@ const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose, selectedDate, 
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            {/* 키워드 애니메이션 로딩 */}
+            {isGenerating && <KeywordLoading keywords={keywords} />}
+
+            {/* 기본 스피너 로딩 */}
+            {isAnalyzing && <LoadingScreen />}
+
             {/* 모달 박스 */}
             <div
                 className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
@@ -144,11 +170,10 @@ const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose, selectedDate, 
                         disabled={isLoading}
                         className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl font-bold shadow-lg hover:shadow-amber-500/30 hover:from-amber-600 hover:to-orange-700 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                        {isLoading ? (
-                            <>
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
-                                <span>생성 중...</span>
-                            </>
+                        {isAnalyzing ? (
+                            <span>일기 분석 중...</span>
+                        ) : isGenerating ? (
+                            <span>그림 그리는 중...</span>
                         ) : (
                             <>
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -160,9 +185,6 @@ const WriteModal: React.FC<WriteModalProps> = ({ isOpen, onClose, selectedDate, 
                     </button>
                 </div>
             </div>
-
-            {/* 로딩 화면 */}
-            {isLoading && <LoadingScreen />}
         </div>
     );
 };
