@@ -43,8 +43,10 @@ public class CalendarService {
         // 본인 일기인지 확인
         MoodLog moodLog = calendarRepository.findByIdAndUser_Id(id, userId)
                 .orElseThrow(() -> new IllegalArgumentException("일기를 찾을 수 없거나 접근 권한이 없습니다."));
-
         MoodAnalysis analysis = moodLog.getMoodAnalysis();
+        if (analysis == null || analysis.getImagePrompt() == null) {
+            throw new IllegalStateException("분석 데이터가 존재하지 않습니다.");
+        }
 
         List<String> mainKeyword = (analysis != null && analysis.getKeywords() != null && !analysis.getKeywords().isEmpty())
                 ? analysis.getKeywords()
