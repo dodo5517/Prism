@@ -1,12 +1,6 @@
 import api from './axios';
 import {CalendarDetailResponseDto, CalendarResponseDto, AnalyzeResponse} from '@/types/diary';
-
-// 공통 응답 형식
-interface ApiResponse<T> {
-    success: boolean;
-    data: T;
-    message: string | null;
-}
+import {ApiResponse} from "@/types/global";
 
 // 일기 저장 및 분석
 export const analyzeDiary = async (date: string, content: string): Promise<AnalyzeResponse> => {
