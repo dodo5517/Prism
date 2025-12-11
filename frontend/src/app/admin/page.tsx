@@ -153,7 +153,7 @@ export default function Page() {
         },
     };
 
-    if (loading) return <LoadingScreen />;
+    // if (loading) return "Loading...";
 
     return (
         <div className="min-h-screen bg-stone-50 p-4 sm:p-6 lg:p-8">
