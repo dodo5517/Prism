@@ -16,14 +16,12 @@ import {UserRole} from "@/types/JwtPayload";
 export default function Home() {
     const { isAuthenticated, logout, user } = useAuthStore();
 
-    // 상태 관리
     const [currentDate, setCurrentDate] = useState<Date>(new Date());
     const [diaries, setDiaries] = useState<CalendarResponseDto[]>([]);
     const [selectedDate, setSelectedDate] = useState('');
     const [selectedDetail, setSelectedDetail] = useState<CalendarDetailResponseDto | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
-    // 모달 상태
     const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
 
     // 초기화 및 데이터 로딩
@@ -37,20 +35,18 @@ export default function Home() {
         }
     }, [currentDate, isAuthenticated, isMounted]);
 
-    // 달력 부분 업데이트 함수
+    // 달력에 추가하는 함수
     const addDiary = (newDiary: CalendarResponseDto) => {
         setDiaries(prev => {
-            // 이미 해당 날짜 일기가 있으면 교체
             const exists = prev.some(d => d.id === newDiary.id);
             if (exists) {
                 return prev.map(d => (d.id === newDiary.id ? newDiary : d));
             }
-            // 없으면 추가
             return [...prev, newDiary];
         });
     };
 
-    // 달력 부분 업데이트 함수
+    // 달력에 업데이트하는 함수
     const updateDiary = (updated: CalendarDetailResponseDto) => {
         setDiaries(prev =>
             prev.map(d =>
@@ -85,11 +81,11 @@ export default function Home() {
         }
     };
 
-    // 달력 그리드 생성(date-fns 활용)
+    // 달력 그리드 생성
     const calendarDays = useMemo(() => {
         const monthStart = startOfMonth(currentDate);
         const monthEnd = endOfMonth(monthStart);
-        const startDate = startOfWeek(monthStart); // 일요일 시작 기준
+        const startDate = startOfWeek(monthStart); // 시작 기준 일요일
         const endDate = endOfWeek(monthEnd);
 
         const days = eachDayOfInterval({ start: startDate, end: endDate });
@@ -113,17 +109,14 @@ export default function Home() {
         // 해당 날짜에 일기가 있는지 확인
         const diary = diaries.find((d) => d.date === dateString);
         if (diary) {
+            // 일기 있으면
             try {
                 // 상제 조회 API 호출
                 const detailData = await getDiaryDetail(diary.id);
-
-                // 받아온 상세 데이터로 모달 열기
                 setSelectedDetail(detailData);
             } catch (error) {
                 console.error("상세 조회 실패:", error);
                 alert("일기 내용을 불러오는 데 실패했습니다.");
-            } finally {
-                // setIsLoading(false);
             }
         } else {
             // 일기가 없으면 쓰기 모달 열기
@@ -136,145 +129,152 @@ export default function Home() {
         setIsWriteModalOpen(true);
     };
 
-    // 상수 데이터
-    const daysOfWeek: string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const daysOfWeek: string[] = ['일', '월', '화', '수', '목', '금', '토'];
     const months: number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
     if (!isMounted) return null;
-
     // 로그인 전 화면
     if (!isAuthenticated) return <LoginView />;
 
     return (
-        <main className="min-h-screen bg-stone-200 p-2 sm:p-4 md:p-6 lg:p-8 flex items-center justify-center font-sans">
-            <div className="w-full max-w-xs sm:max-w-lg md:max-w-3xl lg:max-w-4xl bg-amber-50/90 rounded-lg shadow-2xl overflow-hidden border border-stone-300/50 relative">
-                {/* Header */}
-                <div className="bg-stone-300/50 px-4 py-3 flex flex-col gap-4 border-b border-stone-300/70">
+        <main className="min-h-screen bg-neutral-100 p-3 sm:p-5 md:p-8 flex items-center justify-center">
+            <div className="w-full max-w-xs sm:max-w-lg md:max-w-3xl lg:max-w-4xl">
+                {/* 메인  */}
+                <div className="bg-white rounded-2xl shadow-sm border border-neutral-200/60 overflow-hidden">
 
-                    {/* 년도 | 로고 | 버튼 */}
-                    <div className="flex items-center justify-between w-full relative">
-                        {/* 년도 */}
-                        <div className="text-stone-500 text-sm font-serif font-bold italic w-20">
-                            {format(currentDate, 'yyyy')}
+                    {/* 헤더 */}
+                    <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-neutral-100">
+                        <div className="flex items-center justify-between mb-5">
+                            {/* 년도 */}
+                            <span className="text-neutral-400 text-xs sm:text-sm tabular-nums">
+                                {format(currentDate, 'yyyy')}
+                            </span>
+
+                            {/* 로고 */}
+                            <h1 className="absolute left-1/2 -translate-x-1/2 text-lg sm:text-xl tracking-[0.2em] text-neutral-800 font-medium">
+                                PRISM
+                            </h1>
+
+                            {/* 버튼 */}
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                {user?.role === UserRole.ADMIN && (
+                                    <Link
+                                        href="/admin"
+                                        className="text-[10px] sm:text-xs px-2.5 py-1.5 rounded-md bg-neutral-800 text-white hover:bg-neutral-700 transition-colors"
+                                    >
+                                        Admin
+                                    </Link>
+                                )}
+                                <button
+                                    onClick={() => openWriteModal('')}
+                                    className="text-[10px] sm:text-xs px-3 py-1.5 rounded-md bg-neutral-900 text-white hover:bg-neutral-800 transition-colors"
+                                >
+                                    기록하기
+                                </button>
+                                <button
+                                    onClick={() => { if(confirm("로그아웃 하시겠습니까?")) logout(); }}
+                                    className="text-[10px] sm:text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
+                                >
+                                    로그아웃
+                                </button>
+                            </div>
                         </div>
 
-                        {/* 로고 */}
-                        <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl sm:text-3xl font-serif font-extrabold text-indigo-900 tracking-widest uppercase drop-shadow-sm">
-                            Prism
-                        </h1>
-
-                        {/* 버튼 */}
-                        <div className="flex gap-2 w-20 justify-end z-10">
-                            {user?.role === UserRole.ADMIN && (
-                                <Link
-                                    href="/admin"
-                                    className="text-[10px] sm:text-xs bg-red-400 text-amber-50 px-2 py-1 rounded hover:bg-red-500 transition flex items-center"
+                        {/* 월 선택 */}
+                        <div className="flex items-center justify-center gap-0.5 sm:gap-1">
+                            {months.map((m) => (
+                                <button
+                                    key={m}
+                                    onClick={() => handleMonthChange(m)}
+                                    className={`text-xs w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-md transition-all ${
+                                        m === (currentDate.getMonth() + 1)
+                                            ? 'bg-neutral-900 text-white'
+                                            : 'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100'
+                                    }`}
                                 >
-                                    ADMIN
-                                </Link>
-                            )}
-                            <button onClick={() => openWriteModal('')}
-                                className="text-[10px] sm:text-xs bg-stone-600 text-amber-50 px-2 py-1 rounded hover:bg-stone-800 transition whitespace-nowrap">
-                                + WRITE
-                            </button>
-                            <button
-                                onClick={() => { if(confirm("로그아웃 하시겠습니까?")) logout(); }}
-                                className="text-[10px] sm:text-xs text-stone-500 hover:text-red-500 underline whitespace-nowrap"
-                            >
-                                LOGOUT
-                            </button>
+                                    {m}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
-                    {/* 월 선택 버튼 (1~12)*/}
-                    <div className="flex items-center justify-center gap-1 sm:gap-2 w-full overflow-x-auto pb-1 scrollbar-hide">
-                        {months.map((m) => (
-                            <button
-                                key={m}
-                                onClick={() => handleMonthChange(m)}
-                                className={`flex-shrink-0 text-[10px] sm:text-xs w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full transition-all duration-300 ${
-                                    m === (currentDate.getMonth() + 1)
-                                        ? 'bg-red-400 text-white font-bold shadow-md scale-110'
-                                        : 'text-stone-400 hover:bg-stone-200 hover:text-stone-600'
+                    {/* 요일 헤더 */}
+                    <div className="grid grid-cols-7 border-b border-neutral-100 bg-neutral-50/50">
+                        {daysOfWeek.map((day, index) => (
+                            <div
+                                key={`${day}-${index}`}
+                                className={`py-2.5 text-center text-[11px] sm:text-xs ${
+                                    index === 0 ? 'text-red-400' : index === 6 ? 'text-blue-400' : 'text-neutral-400'
                                 }`}
                             >
-                                {m}
-                            </button>
+                                {day}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Calendar */}
+                    <div>
+                        {calendarDays.map((week, weekIndex) => (
+                            <div key={weekIndex} className="grid grid-cols-7 border-b border-neutral-50 last:border-b-0">
+                                {week.map((day, dayIndex) => {
+                                    const dateString = format(day, 'yyyy-MM-dd');
+                                    const diary = diaries.find((d) => d.date === dateString);
+                                    const isCurrentMonth = isSameMonth(day, currentDate);
+                                    const isToday = isSameDay(day, new Date());
+
+                                    return (
+                                        <div
+                                            key={day.toString()}
+                                            onClick={() => handleDateClick(day)}
+                                            className={`
+                                                min-h-[60px] sm:min-h-[80px] md:min-h-[100px] lg:min-h-[110px] 
+                                                p-1 sm:p-1.5 border-r border-neutral-50 last:border-r-0 relative group cursor-pointer transition-colors
+                                                ${!isCurrentMonth ? 'bg-neutral-50/50' : 'hover:bg-neutral-50'}
+                                            `}
+                                        >
+                                            {/* 날짜 */}
+                                            <span className={`
+                                                relative z-10 text-[11px] sm:text-xs inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full transition-colors
+                                                ${!isCurrentMonth ? 'text-neutral-300' : ''}
+                                                ${dayIndex === 0 && isCurrentMonth ? 'text-red-400' : ''}
+                                                ${dayIndex === 6 && isCurrentMonth ? 'text-blue-400' : ''}
+                                                ${dayIndex !== 0 && dayIndex !== 6 && isCurrentMonth ? 'text-neutral-600' : ''}
+                                                ${isToday ? 'bg-neutral-900 text-white' : ''}
+                                            `}>
+                                                {format(day, 'd')}
+                                            </span>
+
+                                            {/* 이미지 */}
+                                            {diary && (
+                                                <div className="absolute inset-1 z-0 rounded-lg overflow-hidden">
+                                                    <img
+                                                        src={diary.imageUrl}
+                                                        alt="diary"
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                    />
+                                                    {/* hover */}
+                                                    <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                                                         style={{
+                                                             boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.8), inset 0 0 20px rgba(255,255,255,0.3)'
+                                                         }}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         ))}
                     </div>
                 </div>
 
-                <div className="grid grid-cols-7 border-b border-stone-300/50 bg-amber-50/50">
-                    {daysOfWeek.map((day, index) => (
-                        <div
-                            key={day}
-                            className={`py-2 text-center text-[10px] sm:text-xs font-serif font-bold uppercase tracking-wider ${
-                                index === 0 ? 'text-red-400' : index === 6 ? 'text-blue-400' : 'text-stone-500'
-                            }`}
-                        >
-                            {day}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Calendar Grid */}
-                <div className="relative bg-amber-50">
-                    {calendarDays.map((week, weekIndex) => (
-                        <div key={weekIndex} className="grid grid-cols-7 border-b border-stone-200/60 last:border-b-0">
-                            {week.map((day, dayIndex) => {
-                                const dateString = format(day, 'yyyy-MM-dd');
-                                const diary = diaries.find((d) => d.date === dateString);
-                                const isCurrentMonth = isSameMonth(day, currentDate);
-                                const isToday = isSameDay(day, new Date());
-                                const isWeekend = dayIndex === 0 || dayIndex === 6; // 0:Sun, 6:Sat
-
-                                return (
-                                    <div
-                                        key={day.toString()}
-                                        onClick={() => handleDateClick(day)}
-                                        className={`
-                                            min-h-[60px] sm:min-h-[80px] md:min-h-[100px] lg:min-h-[110px] 
-                                            p-1 border-r border-stone-200/40 last:border-r-0 relative group cursor-pointer transition-colors
-                                            ${!isCurrentMonth ? 'bg-stone-100/50 text-stone-300' : 'text-stone-600 hover:bg-amber-100/30'}
-                                            ${isToday ? 'bg-indigo-50/60' : ''}
-                                        `}
-                                    >
-                                        {/* 날짜 숫자 */}
-                                        <span className={`
-                                            relative z-10 text-[10px] sm:text-xs font-medium px-1 rounded
-                                            ${dayIndex === 0 ? 'text-red-400' : dayIndex === 6 ? 'text-blue-400' : ''}
-                                            ${isToday ? 'bg-indigo-500 text-white font-bold shadow-sm' : ''}
-                                        `}>
-                                            {format(day, 'd')}
-                                        </span>
-
-                                        {/* 이미지 */}
-                                        {diary && (
-                                            <div className="absolute inset-0 z-0">
-                                                {/* 이미지 */}
-                                                <img
-                                                    src={diary.imageUrl}
-                                                    alt="image"
-                                                    className="w-full h-full p-[1px] rounded-[4px] object-cover grayscale-[20%] duration-500"
-                                                />
-
-                                                {/*/!* 감정 테두리 (Overlay) *!/*/}
-                                                {/*<div className={`absolute inset-0 border-[3px] pointer-events-none transition-colors duration-300 ${*/}
-                                                {/*    diary.moodScore >= 8 ? 'border-pink-300/70' :*/}
-                                                {/*        diary.moodScore >= 4 ? 'border-transparent' : 'border-stone-400/50'*/}
-                                                {/*}`} />*/}
-
-                                                {/* 감정 점수 (작게 표시) - 선택사항 */}
-                                                {/* <div className="absolute bottom-1 right-1 bg-white/80 px-1 rounded text-[8px] font-bold text-stone-600">
-                                                    {diary.moodScore}
-                                                </div> */}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ))}
+                {/* 하단 */}
+                <div className="flex justify-center mt-4 gap-1">
+                    <div className="w-8 h-0.5 rounded-full bg-red-300/60" />
+                    <div className="w-8 h-0.5 rounded-full bg-amber-300/60" />
+                    <div className="w-8 h-0.5 rounded-full bg-emerald-300/60" />
+                    <div className="w-8 h-0.5 rounded-full bg-blue-300/60" />
+                    <div className="w-8 h-0.5 rounded-full bg-violet-300/60" />
                 </div>
             </div>
 
@@ -296,8 +296,7 @@ export default function Home() {
                 />
             }
 
-            {/*로딩*/}
             {isLoading && <LoadingScreen />}
         </main>
     );
-};
+}

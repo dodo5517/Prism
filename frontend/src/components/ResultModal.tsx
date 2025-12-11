@@ -14,30 +14,15 @@ interface ResultModalProps {
 const ResultModal: React.FC<ResultModalProps> = ({ data, onClose, onUpdateDiary, onDeleteDiary }) => {
     const [localData, setLocalData] = useState<CalendarDetailResponseDto | null>(data);
 
-    // 로딩 상태 분리
-    const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false); // 텍스트 분석 중
-    const [isGenerating, setIsGenerating] = useState<boolean>(false); // 이미지 생성 중
-    const [keywords, setKeywords] = useState<string[]>([]); // 애니메이션용 키워드
+    const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+    const [isGenerating, setIsGenerating] = useState<boolean>(false);
+    const [keywords, setKeywords] = useState<string[]>([]);
 
     useEffect(() => {
         setLocalData(data);
     }, [data]);
 
     if (!localData) return null;
-
-    // 점수에 따른 테두리 색상
-    const getBorderColorClass = (score: number = 0) => {
-        if (score >= 70) return 'border-pink-300';
-        if (score >= 40) return 'border-amber-200';
-        return 'border-stone-300';
-    };
-
-    // 점수에 따른 배경 그라데이션
-    const getBackgroundGradient = (score: number = 0) => {
-        if (score >= 70) return 'from-pink-50 to-amber-50';
-        if (score >= 40) return 'from-amber-50 to-stone-50';
-        return 'from-stone-50 to-stone-100';
-    };
 
     // 삭제 핸들러
     const handleDelete = async (id:number) => {
@@ -51,7 +36,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ data, onClose, onUpdateDiary,
             console.error(error);
             alert('삭제 실패했습니다.');
         } finally {
-            onClose(); // 모달 닫기
+            onClose();
         }
     };
 
@@ -60,7 +45,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ data, onClose, onUpdateDiary,
         if (!confirm('이미지를 다시 생성하시겠습니까? 기존 이미지는 사라집니다.')) return;
 
         try {
-            // 재분석 시작 (기존 LoadingScreen 표시)
+            // 재분석 시작
             setIsAnalyzing(true);
             const newAnalysisResult:AnalyzeResponse = await regenerateImage(id);
             setIsAnalyzing(false);
@@ -90,95 +75,111 @@ const ResultModal: React.FC<ResultModalProps> = ({ data, onClose, onUpdateDiary,
         }
     };
 
-
-
     return (
-        // 배경
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={onClose}
         >
-            {/* 모달 박스 */}
+            {/* 배경 */}
+            <div className="absolute inset-0 bg-neutral-900/50 backdrop-blur-sm" />
+
+            {/* 모달 */}
             <div
-                className={`relative w-full max-w-[320px] sm:max-w-sm md:max-w-md p-4 sm:p-5 md:p-6 bg-gradient-to-br ${getBackgroundGradient(localData?.moodScore)} rounded-2xl shadow-2xl overflow-hidden border border-stone-200/50`}
+                className="relative w-full max-w-[340px] sm:max-w-sm md:max-w-md bg-white rounded-2xl shadow-xl overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
-                <button
-                    onClick={onClose}
-                    className="absolute top-3 right-3 sm:top-4 sm:right-4 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-white text-stone-400 hover:text-stone-600 transition-all shadow-sm z-10"
-                >
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+                {/* 내용 */}
+                <div className="p-5 sm:p-6">
+                    {/* 닫기 */}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-400 hover:text-neutral-600 transition-all z-10"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
 
-                {/* 이미지 */}
-                <div className={`w-full aspect-square mb-3 sm:mb-4 rounded-xl overflow-hidden border-4 ${getBorderColorClass(localData?.moodScore)} bg-stone-100 flex items-center justify-center shadow-inner`}>
-                    {localData?.imageUrl ? (
-                        <img
-                            src={localData.imageUrl}
-                            key={localData.imageUrl}
-                            alt="AI Created"
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <div className="flex flex-col items-center gap-2 text-stone-400">
-                            <svg className="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span className="text-xs sm:text-sm">이미지가 없습니다</span>
+                    {/* 이미지 */}
+                    <div className="w-full aspect-square mb-4 rounded-xl overflow-hidden bg-neutral-100 relative group">
+                        {localData?.imageUrl ? (
+                            <>
+                                <img
+                                    src={localData.imageUrl}
+                                    key={localData.imageUrl}
+                                    alt="AI Created"
+                                    className="w-full h-full object-cover"
+                                />
+                                <div
+                                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+                                    style={{
+                                        background: 'linear-gradient(135deg, rgba(255,100,100,0.1) 0%, rgba(255,200,100,0.1) 20%, rgba(100,255,150,0.1) 40%, rgba(100,200,255,0.1) 60%, rgba(200,100,255,0.1) 80%, transparent 100%)'
+                                    }}
+                                />
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full gap-2 text-neutral-400">
+                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span className="text-sm">이미지가 없습니다</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 날짜 */}
+                    <p className="text-sm text-neutral-500 mb-3">{localData?.date}</p>
+
+                    {/* 키워드 */}
+                    {localData?.keywords && localData?.keywords.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                            {localData?.keywords.map((k, index) => {
+                                // 무지개 색상 순서
+                                const colors = [
+                                    'bg-red-50 text-red-600 border-red-100',
+                                    'bg-orange-50 text-orange-600 border-orange-100',
+                                    'bg-amber-50 text-amber-600 border-amber-100',
+                                    'bg-emerald-50 text-emerald-600 border-emerald-100',
+                                    'bg-blue-50 text-blue-600 border-blue-100',
+                                    'bg-indigo-50 text-indigo-600 border-indigo-100',
+                                    'bg-violet-50 text-violet-600 border-violet-100',
+                                ];
+                                return (
+                                    <span
+                                        key={index}
+                                        className={`px-2.5 py-1 text-xs rounded-full border ${colors[index % colors.length]}`}
+                                    >
+                                        #{k}
+                                    </span>
+                                );
+                            })}
                         </div>
                     )}
-                </div>
 
-                {/* 날짜 */}
-                <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <p className="text-xs sm:text-sm text-stone-500 font-medium">{localData?.date}</p>
-                </div>
-
-                {/* 키워드 태그 */}
-                {localData?.keywords && localData?.keywords.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3 sm:mb-4">
-                        {localData?.keywords.map((k, index) => (
-                            <span
-                                key={index}
-                                className="px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-medium text-amber-700 bg-amber-100/80 rounded-full border border-amber-200/50"
-                            >
-                                #{k}
-                            </span>
-                        ))}
+                    {/* 본문 */}
+                    <div className="mb-5 p-4 bg-neutral-50 rounded-xl">
+                        <p className="text-neutral-600 text-sm leading-relaxed whitespace-pre-wrap">
+                            {localData?.content}
+                        </p>
                     </div>
-                )}
 
-                {/* 본문 */}
-                <div className="mb-4 sm:mb-5 md:mb-6 p-3 sm:p-4 bg-white/60 rounded-xl border border-stone-200/50">
-                    <p className="text-stone-700 text-xs sm:text-sm md:text-base leading-relaxed whitespace-pre-wrap">
-                        {localData?.content}
-                    </p>
-                </div>
-
-                {/* 버튼 그룹 */}
-                <div className="flex flex-col gap-2 sm:gap-3">
-                    {/* 다시 만들기 & 삭제 버튼 */}
-                    <div className="flex gap-2 sm:gap-3">
+                    {/* 버튼 */}
+                    <div className="flex gap-3">
                         <button
                             onClick={() => handleRecreate(localData!.id)}
-                            className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 text-amber-700 font-medium bg-white/80 border border-amber-200 rounded-xl hover:bg-amber-50 transition-all active:scale-[0.98] text-xs sm:text-sm"
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 text-neutral-600 bg-neutral-100 rounded-xl hover:bg-neutral-200 transition-all active:scale-[0.98] text-sm"
                         >
-                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
-                            다시 만들기
+                            다시 그리기
                         </button>
                         <button
                             onClick={() => handleDelete(localData!.id)}
-                            className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 text-red-600 font-medium bg-white/80 border border-red-200 rounded-xl hover:bg-red-50 transition-all active:scale-[0.98] text-xs sm:text-sm"
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 text-red-500 bg-red-50 rounded-xl hover:bg-red-100 transition-all active:scale-[0.98] text-sm"
                         >
-                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                             삭제
                         </button>

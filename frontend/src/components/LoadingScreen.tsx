@@ -2,14 +2,15 @@ import React from 'react';
 
 const LoadingScreen: React.FC = () => {
     return (
-        // 전체 화면 덮기 (z-index 최상위)
-        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/80 text-white">
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-neutral-900/95">
+            <div className="flex flex-col items-center">
+                {/* 로딩 스피너 */}
+                <div className="w-10 h-10 mb-6 border-2 border-neutral-700 border-t-white rounded-full animate-spin" />
 
-            {/* 빙글빙글 도는 스피너 */}
-            <div className="w-16 h-16 mb-4 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-
-            <h3 className="text-xl font-bold mb-2">AI가 내용을 분석하고 있어요...</h3>
-            <p className="text-gray-300 text-sm">잠시만 기다려주세요</p>
+                {/* 텍스트 */}
+                <p className="text-white text-lg mb-2">분석 중</p>
+                <p className="text-neutral-500 text-sm">잠시만 기다려주세요</p>
+            </div>
         </div>
     );
 };
