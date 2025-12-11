@@ -167,7 +167,7 @@ export default function Home() {
                         <div className="flex gap-2 w-20 justify-end z-10">
                             {user?.role === UserRole.ADMIN && (
                                 <Link
-                                    href="/admin/keyword"
+                                    href="/admin"
                                     className="text-[10px] sm:text-xs bg-red-400 text-amber-50 px-2 py-1 rounded hover:bg-red-500 transition flex items-center"
                                 >
                                     ADMIN
