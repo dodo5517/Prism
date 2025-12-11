@@ -1,6 +1,7 @@
 package dodo.springboot.prismbackend.mood.repository;
 
 import dodo.springboot.prismbackend.mood.dto.KeywordStatisticsDto;
+import dodo.springboot.prismbackend.mood.dto.MoodStatisticsDto;
 import dodo.springboot.prismbackend.mood.entity.MoodAnalysis;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -34,7 +35,23 @@ public interface MoodAnalysisRepository extends JpaRepository<MoodAnalysis, Long
     GROUP BY sub.count, sub.ranking
     ORDER BY sub.ranking ASC
 """, nativeQuery = true)
-    List<KeywordStatisticsDto> findTopKeywordsByUserIdAndPeriod(
+    List<KeywordStatisticsDto> findTopKeywordsByPeriod(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    // 감정 추이 통계 조회 쿼리
+    @Query(value = """
+        SELECT
+            TO_CHAR(ml.log_date, 'YYYY-MM') AS period,
+            ROUND(AVG(ma.mood_score), 1) AS averageScore
+        FROM mood_analysis ma
+        JOIN mood_logs ml ON ma.mood_log_id = ml.id
+        WHERE ml.log_date BETWEEN :startDate AND :endDate
+        GROUP BY period
+        ORDER BY period ASC
+    """, nativeQuery = true)
+    List<MoodStatisticsDto> findMoodTrendByPeriod(
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
