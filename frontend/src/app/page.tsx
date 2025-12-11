@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, setMonth, isSameMonth, isSameDay } from 'date-fns';
 import { useAuthStore } from '@/store/authStore';
 import {getCalendar, getDiaryDetail} from '@/api/diaryApi';
@@ -10,9 +11,10 @@ import LoginView from '@/components/Login';
 import WriteModal from '@/components/WriteModal';
 
 import { CalendarDetailResponseDto, CalendarResponseDto } from "@/types/diary";
+import {UserRole} from "@/types/JwtPayload";
 
 export default function Home() {
-    const { isAuthenticated, logout } = useAuthStore();
+    const { isAuthenticated, logout, user } = useAuthStore();
 
     // 상태 관리
     const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -112,7 +114,6 @@ export default function Home() {
         const diary = diaries.find((d) => d.date === dateString);
         if (diary) {
             try {
-                // 로딩 표시 필요시 setIsLoading(true);
                 // 상제 조회 API 호출
                 const detailData = await getDiaryDetail(diary.id);
 
@@ -147,21 +148,6 @@ export default function Home() {
     return (
         <main className="min-h-screen bg-stone-200 p-2 sm:p-4 md:p-6 lg:p-8 flex items-center justify-center font-sans">
             <div className="w-full max-w-xs sm:max-w-lg md:max-w-3xl lg:max-w-4xl bg-amber-50/90 rounded-lg shadow-2xl overflow-hidden border border-stone-300/50 relative">
-
-                {/* 상단 로그아웃/쓰기 버튼 */}
-                <div className="absolute top-3 right-4 z-20 flex gap-2">
-                    <button onClick={() => openWriteModal(format(new Date(), "yyyy-MM-dd"))}
-                            className="text-[10px] sm:text-xs bg-stone-600 text-amber-50 px-2 py-1 rounded hover:bg-stone-800 transition">
-                        + WRITE
-                    </button>
-                    <button
-                        onClick={() => { if(confirm("로그아웃 하시겠습니까?")) logout(); }}
-                        className="text-[10px] sm:text-xs text-stone-400 hover:text-red-400 underline"
-                    >
-                        LOGOUT
-                    </button>
-                </div>
-
                 {/* Header */}
                 <div className="bg-stone-300/50 px-4 py-3 flex flex-col gap-4 border-b border-stone-300/70">
 
@@ -179,6 +165,14 @@ export default function Home() {
 
                         {/* 버튼 */}
                         <div className="flex gap-2 w-20 justify-end z-10">
+                            {user?.role === UserRole.ADMIN && (
+                                <Link
+                                    href="/admin/keyword"
+                                    className="text-[10px] sm:text-xs bg-red-400 text-amber-50 px-2 py-1 rounded hover:bg-red-500 transition flex items-center"
+                                >
+                                    ADMIN
+                                </Link>
+                            )}
                             <button onClick={() => openWriteModal('')}
                                 className="text-[10px] sm:text-xs bg-stone-600 text-amber-50 px-2 py-1 rounded hover:bg-stone-800 transition whitespace-nowrap">
                                 + WRITE
