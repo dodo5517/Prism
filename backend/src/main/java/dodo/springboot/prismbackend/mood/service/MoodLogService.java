@@ -77,7 +77,7 @@ public class MoodLogService {
         String imageUrl = null;
         if (imageBytes != null) {
             // 일단 .png로 저장 -> StorageService가 .jpg로 바꿈
-            String filename = "user_" + user.getId() + "_" + ".png";
+            String filename = "user_" + user.getId() + ".png";
             imageUrl = storageService.uploadImage(imageBytes, filename);
         }
 
