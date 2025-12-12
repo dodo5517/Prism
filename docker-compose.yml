@@ -1,0 +1,25 @@
+services:
+  # 백엔드 서비스
+  backend:
+    container_name: local-backend
+    build:
+      context: ./backend # backend 폴더의 Dockerfile 사용
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080" # 호스트:컨테이너
+    env_file:
+      - ./backend/.env # backend 폴더의 .env 사용
+
+  # 프론트엔드 서비스
+  frontend:
+    container_name: local-frontend
+    build:
+      context: ./frontend # frontend 폴더의 Dockerfile 사용
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # 로컬 실행 시, localhost:8080으로 요청을 보냄
+      NEXT_PUBLIC_API_URL: http://localhost:8080/api
+    depends_on:
+      - backend # 백엔드가 먼저 켜지도록 설정
