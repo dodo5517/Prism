@@ -72,20 +72,10 @@ Prism은 사용자가 작성한 일기를 Google Gemini AI로 분석하여 감�
 
 ## 아키텍처
 
-```
-[Client] --> [Nginx :80]
-                 |
-      +----------+----------+
-      |                     |
-   /api/*                  /*
-      |                     |
-[Spring Boot]         [Next.js]
-      |
-      +---> [Supabase PostgreSQL]
-      +---> [Supabase Storage] (이미지 저장)
-      +---> [Gemini API]
-      +---> [Stable Diffusion API]
-```
+<p>
+  <img width="49%" src="https://github.com/user-attachments/assets/25311c9a-05b3-4690-a843-964388477ae9" />
+</p>
+
 
 **이미지 생성 흐름**
 
@@ -127,6 +117,8 @@ Prism/
 ├── frontend/
 │   ├── src/app/
 │   └── Dockerfile
+├── nginx/
+│   └── default.conf
 └── docker-compose.yml
 ```
 
