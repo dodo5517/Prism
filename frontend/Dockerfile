@@ -17,6 +17,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# 빌드 시점에 변수 받기 선언
+ARG NEXT_PUBLIC_API_URL
+# 받은 변수를 환경변수로 설정
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Next.js 빌드 실행
 RUN npm run build
 

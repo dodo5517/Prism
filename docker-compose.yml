@@ -1,25 +1,49 @@
 services:
-  # 백엔드 서비스
-  backend:
-    container_name: local-backend
-    build:
-      context: ./backend # backend 폴더의 Dockerfile 사용
-      dockerfile: Dockerfile
+  # Nginx 추가
+  nginx:
+    image: nginx:alpine
+    container_name: prism-nginx
     ports:
-      - "8080:8080" # 호스트:컨테이너
-    env_file:
-      - ./backend/.env # backend 폴더의 .env 사용
-
-  # 프론트엔드 서비스
-  frontend:
-    container_name: local-frontend
-    build:
-      context: ./frontend # frontend 폴더의 Dockerfile 사용
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      # 로컬 실행 시, localhost:8080으로 요청을 보냄
-      NEXT_PUBLIC_API_URL: http://localhost:8080/api
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf # nginx 설정 파일 주입
     depends_on:
-      - backend # 백엔드가 먼저 켜지도록 설정
+      - frontend
+      - backend
+    networks:
+      - prism-network
+
+  # Backend
+  backend:
+    container_name: prism-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    expose:
+      - "8080" # 같은 도커 안에서만 열어줌
+    env_file:
+      - ./backend/.env
+    networks:
+      - prism-network
+
+  # Frontend
+  frontend:
+    container_name: prism-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: "http://localhost/api"
+    expose:
+      - "3000" # 같은 도커 안에서만
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost/api"
+    depends_on:
+      - backend
+    networks:
+      - prism-network
+
+# 컨테이너끼리 통신할 전용 네트워크
+networks:
+  prism-network:
+    driver: bridge
