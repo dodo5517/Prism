@@ -47,8 +47,8 @@ Prism은 사용자가 작성한 일기를 Google Gemini AI로 분석하여 감�
 
 **Frontend**
 
-- Next.js 16
-- React 19
+- Next.js 16.0.10
+- React 19.2.3
 - TypeScript 5
 - Tailwind CSS 4
 - Zustand
@@ -163,7 +163,7 @@ cp frontend/.env.example frontend/.env
 docker-compose up --build
 ```
 
-`http://localhost:3000`
+`http://localhost`
 에서 확인할 수 있습니다.
 
 
